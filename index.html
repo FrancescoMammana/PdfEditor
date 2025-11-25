@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor PDF - Aggiungi Testo e Immagini</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <div class="app-container">
+    <!-- Upload Area -->
+    <div id="uploadArea" class="upload-area">
+  <div class="upload-content">
+    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-1"></path>
+      <polyline points="9 15 12 12 15 15"></polyline>
+      <line x1="12" y1="12" x2="12" y2="21"></line>
+    </svg>
+    <h2>Carica il tuo PDF</h2>
+    <p>Trascina qui il file PDF o clicca per selezionarlo</p>
+    <button class="btn btn-primary" id="uploadBtnMain">📁 Carica PDF</button>
+    <input type="file" id="pdfFileInputMain" accept="application/pdf" hidden>
+  </div>
+</div>
+<!-- TOOLBAR: nuova struttura -->
+<div id="toolbar" class="toolbar" style="display: none;">
+  <button id="uploadBtn" class="btn btn-primary">📁 Carica PDF</button>
+  <input type="file" id="pdfFileInput" accept="application/pdf" hidden>
+
+  <div class="separator"></div>
+
+  <button id="selectTool" class="btn">👆 Seleziona</button>
+  <button id="textTool" class="btn">T Testo</button>
+  <button id="imageTool" class="btn">🖼️ Immagine</button>
+  <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+
+  <div class="separator"></div>
+  <!-- Proprietà testo (hidden inizialmente) -->
+  <div id="textProperties" style="display: none; gap: 8px; align-items: center;">
+    <select id="fontFamily">
+      <option value="Arial">Arial</option>
+      <option value="Helvetica">Helvetica</option>
+      <option value="Times New Roman">Times New Roman</option>
+      <option value="Courier">Courier</option>
+      <option value="Verdana">Verdana</option>
+    </select>
+    <input type="number" id="fontSize" min="8" max="72" value="16" placeholder="Dimensione">
+    <input type="color" id="fontColor" value="#000000" title="Colore">
+    <button id="boldBtn" class="btn">B</button>
+    <button id="italicBtn" class="btn">I</button>
+    <button id="underlineBtn" class="btn">U</button>
+  </div>
+
+  <div class="separator"></div>
+
+  <button id="deleteBtn" class="btn" style="display: none;">🗑️</button>
+
+  <div class="separator"></div>
+
+  <button id="exportBtn" class="btn btn-primary">💾 Esporta PDF</button>
+</div>
+
+    <!-- Canvas Container -->
+    <div id="canvasContainer" class="canvas-container" style="display: none;">
+      <div class="canvas-wrapper">
+        <canvas id="pdfCanvas"></canvas>
+        <canvas id="fabricCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination" style="display: none;">
+      <button id="prevPage" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <span id="pageInfo" class="page-info">Pagina 1 di 1</span>
+      <button id="nextPage" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
