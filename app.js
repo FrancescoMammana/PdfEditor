@@ -358,7 +358,7 @@ async function loadPDFFile(file) {
     
     // Convert to Uint8Array e SALVA in pdfBytes e originalPdfBytes
     pdfBytes = new Uint8Array(arrayBuffer);
-    originalPdfBytes = pdfBytes; // Riferimento allo stesso array
+    originalPdfBytes = new Uint8Array(pdfBytes); // Riferimento allo stesso array
     console.log('pdfBytes length:', pdfBytes.length);
     console.log('pdfBytes first 10 bytes:', Array.from(pdfBytes.slice(0, 10)));
     
@@ -671,7 +671,7 @@ async function exportPDF() {
     
     // Load original PDF with pdf-lib
     console.log('Loading PDF with pdf-lib...');
-    const pdfLibDoc = await PDFLib.PDFDocument.load(pdfBytes, { 
+    const pdfLibDoc = await PDFLib.PDFDocument.load(originalPdfBytes, { 
       ignoreEncryption: true,
       updateMetadata: false 
     });
