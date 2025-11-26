@@ -828,3 +828,4 @@ function hexToRgb(hex) {
     b: parseInt(result[3], 16)
   } : { r: 0, g: 0, b: 0 };
 }
+// Fixed PDF export with proper buffer copy
