@@ -358,7 +358,7 @@ async function loadPDFFile(file) {
     
     // Convert to Uint8Array e SALVA in pdfBytes e originalPdfBytes
     pdfBytes = new Uint8Array(arrayBuffer);
-    originalPdfBytes = new Uint8Array(pdfBytes); // Riferimento allo stesso array
+    originalPdfBytes = pdfBytes.slice(0); // Riferimento allo stesso array
     console.log('pdfBytes length:', pdfBytes.length);
     console.log('pdfBytes first 10 bytes:', Array.from(pdfBytes.slice(0, 10)));
     
@@ -651,7 +651,7 @@ async function exportPDF() {
       pdfBytes = new Uint8Array(pdfBytes);
     }
     
-    if (pdfBytes.length < 5) {
+    if (originalPdfBytes.length < 5) {
       throw new Error('PDF troppo piccolo per essere valido');
     }
     
