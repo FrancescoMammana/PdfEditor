@@ -9,7 +9,7 @@ let fabricCanvas = null;
 let currentTool = 'select';
 let pdfBytes = null;
 let pageAnnotations = {}; // Store annotations per page
-let originalPdfBytes = null;
+
 
 // DOM elements - declared but not initialized yet
 let uploadArea, pdfFileInput, toolbar, canvasContainer, pdfCanvas, fabricCanvasEl;
@@ -352,13 +352,22 @@ async function loadPDFFile(file) {
     console.log('Loading PDF:', file.name);
     showToast('Caricamento PDF in corso...', 'info');
     
-    // Read file as ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
+    // Read file as ArrayBuffer using FileReader for better compatibility
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(new Error('Errore nella lettura del file'));
+      reader.readAsArrayBuffer(file);
+    });
     console.log('ArrayBuffer length:', arrayBuffer.byteLength);
     
-    // Convert to Uint8Array e SALVA in pdfBytes e originalPdfBytes
+    if (arrayBuffer.byteLength === 0) {
+      throw new Error('File PDF vuoto o corrotto');
+    }
+    
+    // Convert to Uint8Array e SALVA in pdfBytes
     pdfBytes = new Uint8Array(arrayBuffer);
-    originalPdfBytes = new Uint8Array(pdfBytes); // Riferimento allo stesso array
+    
     console.log('pdfBytes length:', pdfBytes.length);
     console.log('pdfBytes first 10 bytes:', Array.from(pdfBytes.slice(0, 10)));
     
@@ -372,7 +381,7 @@ async function loadPDFFile(file) {
     
     // Load with PDF.js
     console.log('Loading with PDF.js...');
-    const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBytes) });
     pdfDoc = await loadingTask.promise;
     totalPages = pdfDoc.numPages;
     currentPage = 1;
@@ -390,7 +399,7 @@ async function loadPDFFile(file) {
     toolbar.style.display = 'flex';
     canvasContainer.style.display = 'flex';
     pagination.style.display = 'flex';
-
+  
     // Render first page
     await renderPage(currentPage);
     updatePagination();
@@ -400,7 +409,6 @@ async function loadPDFFile(file) {
     showToast('Errore nel caricamento del PDF: ' + error.message, 'error');
     // Reset
     pdfBytes = null;
-    originalPdfBytes = null;
     pdfDoc = null;
   }
 }
@@ -627,35 +635,33 @@ function handleSelectionCleared() {
   deleteBtn.style.display = 'none';
 }
 
-
-
 function updatePagination() {
   pageInfo.textContent = `Pagina ${currentPage} di ${totalPages}`;
   prevPageBtn.disabled = currentPage === 1;
   nextPageBtn.disabled = currentPage === totalPages;
 }
 
-
-
 async function exportPDF() {
   try {
-    console.log('Starting PDF export...');
+   // console.log('Starting PDF export...');
     
     // VERIFICA CHE pdfBytes ESISTA E SIA VALIDO
-    if (!pdfBytes) {
+    if (!pdfDoc) {
       throw new Error('Nessun PDF caricato');
     }
-    
-    if (!(pdfBytes instanceof Uint8Array)) {
-      console.warn('pdfBytes non è Uint8Array, conversione...');
-      pdfBytes = new Uint8Array(pdfBytes);
+
+    if (!pdfBytes) {
+      throw new Error('Dati PDF non disponibili. Ricarica il PDF.');
     }
-    
-    if (pdfBytes.length < 5) {
-      throw new Error('PDF troppo piccolo per essere valido');
+
+    if (pdfBytes.length === 0) {
+      throw new Error('File PDF vuoto. Ricarica il PDF.');
     }
+ 
     
     // Verifica header
+    console.log('pdfBytes type:', pdfBytes.constructor.name);
+    console.log('pdfBytes is null?', pdfBytes === null);
     const header = String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
     console.log('PDF header check:', header);
     
@@ -670,8 +676,8 @@ async function exportPDF() {
     saveCurrentPageAnnotations();
     
     // Load original PDF with pdf-lib
-    console.log('Loading PDF with pdf-lib...');
-    const pdfLibDoc = await PDFLib.PDFDocument.load(originalPdfBytes, { 
+    console.log('Loading PDF with pdf-lib, pdfBytes length:', pdfBytes.length);
+    const pdfLibDoc = await PDFLib.PDFDocument.load(new Uint8Array(pdfBytes), { 
       ignoreEncryption: true,
       updateMetadata: false 
     });
