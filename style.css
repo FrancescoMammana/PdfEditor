@@ -1142,3 +1142,15 @@ body {
     min-width: 48px;
   }
 }
+
+/* style.css */
+#textProperties :disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f0f0f0; /* Sfondo grigio per maggiore evidenza */
+}
+
+#textProperties button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

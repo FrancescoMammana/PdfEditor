@@ -230,30 +230,34 @@ function setupToolListeners() {
 // Setup text property listeners
 function setupTextListeners() {
   fontFamily.addEventListener('change', () => {
+    if (fontFamily.disabled) return; // Blocca se disabilitato
     const activeObject = fabricCanvas.getActiveObject();
     if (activeObject && activeObject.type === 'textbox') {
       activeObject.set('fontFamily', fontFamily.value);
       fabricCanvas.renderAll();
     }
   });
-  
+
   fontSize.addEventListener('input', () => {
+    if (fontSize.disabled) return; // Blocca se disabilitato
     const activeObject = fabricCanvas.getActiveObject();
     if (activeObject && activeObject.type === 'textbox') {
       activeObject.set('fontSize', parseInt(fontSize.value));
       fabricCanvas.renderAll();
     }
   });
-  
+
   fontColor.addEventListener('input', () => {
+    if (fontColor.disabled) return; // Blocca se disabilitato
     const activeObject = fabricCanvas.getActiveObject();
     if (activeObject && activeObject.type === 'textbox') {
       activeObject.set('fill', fontColor.value);
       fabricCanvas.renderAll();
     }
   });
-  
+
   boldBtn.addEventListener('click', () => {
+    if (boldBtn.disabled) return; // Blocca se disabilitato
     const activeObject = fabricCanvas.getActiveObject();
     if (activeObject && activeObject.type === 'textbox') {
       const isBold = activeObject.fontWeight === 'bold';
@@ -262,8 +266,9 @@ function setupTextListeners() {
       fabricCanvas.renderAll();
     }
   });
-  
+
   italicBtn.addEventListener('click', () => {
+    if (italicBtn.disabled) return; // Blocca se disabilitato
     const activeObject = fabricCanvas.getActiveObject();
     if (activeObject && activeObject.type === 'textbox') {
       const isItalic = activeObject.fontStyle === 'italic';
@@ -272,8 +277,9 @@ function setupTextListeners() {
       fabricCanvas.renderAll();
     }
   });
-  
+
   underlineBtn.addEventListener('click', () => {
+    if (underlineBtn.disabled) return; // Blocca se disabilitato
     const activeObject = fabricCanvas.getActiveObject();
     if (activeObject && activeObject.type === 'textbox') {
       activeObject.set('underline', !activeObject.underline);
@@ -342,14 +348,14 @@ async function handlePDFUploadFromFile(file) {
     return;
   }
   
-  console.log('Loading dropped file:', file.name, file.type);
+  //console.log('Loading dropped file:', file.name, file.type);
   await loadPDFFile(file);
 }
 
 // Load and render PDF from file
 async function loadPDFFile(file) {
   try {
-    console.log('Loading PDF:', file.name);
+    ///console.log('Loading PDF:', file.name);
     showToast('Caricamento PDF in corso...', 'info');
     
     // Read file as ArrayBuffer using FileReader for better compatibility
@@ -359,7 +365,7 @@ async function loadPDFFile(file) {
       reader.onerror = (e) => reject(new Error('Errore nella lettura del file'));
       reader.readAsArrayBuffer(file);
     });
-    console.log('ArrayBuffer length:', arrayBuffer.byteLength);
+    //console.log('ArrayBuffer length:', arrayBuffer.byteLength);
     
     if (arrayBuffer.byteLength === 0) {
       throw new Error('File PDF vuoto o corrotto');
@@ -368,25 +374,25 @@ async function loadPDFFile(file) {
     // Convert to Uint8Array e SALVA in pdfBytes
     pdfBytes = new Uint8Array(arrayBuffer);
     
-    console.log('pdfBytes length:', pdfBytes.length);
-    console.log('pdfBytes first 10 bytes:', Array.from(pdfBytes.slice(0, 10)));
+    //console.log('pdfBytes length:', pdfBytes.length);
+    //console.log('pdfBytes first 10 bytes:', Array.from(pdfBytes.slice(0, 10)));
     
     // Verifica header
     const header = String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
-    console.log('PDF header:', header);
+    //console.log('PDF header:', header);
     
     if (header !== '%PDF') {
       throw new Error('File non è un PDF valido (header: ' + header + ')');
     }
     
     // Load with PDF.js
-    console.log('Loading with PDF.js...');
+    //console.log('Loading with PDF.js...');
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBytes) });
     pdfDoc = await loadingTask.promise;
     totalPages = pdfDoc.numPages;
     currentPage = 1;
     
-    console.log('PDF loaded successfully:', totalPages, 'pages');
+    //console.log('PDF loaded successfully:', totalPages, 'pages');
     
     // Initialize page annotations storage
     pageAnnotations = {};
@@ -610,29 +616,38 @@ function handleSelection(event) {
   const activeObject = fabricCanvas.getActiveObject();
   
   if (activeObject && activeObject.type === 'textbox') {
-    textProperties.style.display = 'flex';
-    deleteBtn.style.display = 'flex';
+    // Abilita controlli testo
+    textProperties.style.display = 'flex'; // Mantieni visibile
+    deleteBtn.style.display = 'flex'; // Mantieni visibile
     
-    // Update controls
-    fontFamily.value = activeObject.fontFamily;
-    fontSize.value = activeObject.fontSize;
-    fontColor.value = activeObject.fill;
-    
-    boldBtn.classList.toggle('active', activeObject.fontWeight === 'bold');
-    italicBtn.classList.toggle('active', activeObject.fontStyle === 'italic');
-    underlineBtn.classList.toggle('active', activeObject.underline);
+    // Abilita input
+    const inputs = textProperties.querySelectorAll('input, select, button');
+    inputs.forEach(input => input.disabled = false);
   } else if (activeObject && activeObject.type === 'image') {
-    textProperties.style.display = 'none';
-    deleteBtn.style.display = 'flex';
+    // Disabilita controlli testo
+    const inputs = textProperties.querySelectorAll('input, select, button');
+    inputs.forEach(input => input.disabled = true); // Assicurati che sia true
+    
+    // Abilita solo il pulsante elimina
+    deleteBtn.disabled = false;
   } else {
-    textProperties.style.display = 'none';
-    deleteBtn.style.display = 'none';
+    // Niente selezionato: disabilita tutto
+    const inputs = textProperties.querySelectorAll('input, select, button');
+    inputs.forEach(input => input.disabled = true);
+    
+    deleteBtn.disabled = true;
   }
 }
 
 function handleSelectionCleared() {
-  textProperties.style.display = 'none';
-  deleteBtn.style.display = 'none';
+  // Mantieni elementi visibili ma disabilitati
+  textProperties.style.display = 'flex';
+  deleteBtn.style.display = 'flex';
+  
+  const inputs = textProperties.querySelectorAll('input, select, button');
+  inputs.forEach(input => input.disabled = true);
+  
+  deleteBtn.disabled = true;
 }
 
 function updatePagination() {
@@ -660,29 +675,29 @@ async function exportPDF() {
  
     
     // Verifica header
-    console.log('pdfBytes type:', pdfBytes.constructor.name);
-    console.log('pdfBytes is null?', pdfBytes === null);
+    //console.log('pdfBytes type:', pdfBytes.constructor.name);
+    //console.log('pdfBytes is null?', pdfBytes === null);
     const header = String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
-    console.log('PDF header check:', header);
+    //console.log('PDF header check:', header);
     
     if (header !== '%PDF') {
       throw new Error('File PDF non valido (header: ' + header + ')');
     }
     
-    console.log('pdfBytes valid, length:', pdfBytes.length);
+    //console.log('pdfBytes valid, length:', pdfBytes.length);
     showToast('Generazione PDF in corso...', 'info');
     
     // Save current page annotations BEFORE export
     saveCurrentPageAnnotations();
     
     // Load original PDF with pdf-lib
-    console.log('Loading PDF with pdf-lib, pdfBytes length:', pdfBytes.length);
+    //console.log('Loading PDF with pdf-lib, pdfBytes length:', pdfBytes.length);
     const pdfLibDoc = await PDFLib.PDFDocument.load(new Uint8Array(pdfBytes), { 
       ignoreEncryption: true,
       updateMetadata: false 
     });
     
-    console.log('PDF loaded in pdf-lib, pages:', pdfLibDoc.getPageCount());
+    //console.log('PDF loaded in pdf-lib, pages:', pdfLibDoc.getPageCount());
     
     const scale = 1.5;
     const pageCount = pdfLibDoc.getPageCount();
@@ -795,7 +810,7 @@ async function exportPDF() {
     }
     
     // Save and download
-    console.log('Saving modified PDF...');
+    //console.log('Saving modified PDF...');
     const pdfBytesModified = await pdfLibDoc.save();
     
     // Create blob and download
@@ -816,7 +831,7 @@ async function exportPDF() {
       URL.revokeObjectURL(url);
     }, 100);
     
-    console.log('PDF exported successfully!');
+    //console.log('PDF exported successfully!');
     showToast('PDF esportato con successo!', 'success');
     
   } catch (error) {
