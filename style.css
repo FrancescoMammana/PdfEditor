@@ -961,9 +961,10 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   background-color: white;
-  color: var(--color-text);
+  color: var(--color-slate-900);
   font-size: 14px;
   font-family: var(--font-family-base);
+  font-weight: 500;
 }
 
 #textProperties select:focus,
@@ -1145,12 +1146,17 @@ body {
 
 /* style.css */
 #textProperties :disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  background-color: #f0f0f0; /* Sfondo grigio per maggiore evidenza */
+  background-color: #f8f9fa;
+  color: #6b7280;
+  border-color: #e5e7eb;
 }
 
 #textProperties button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  background-color: #f8f9fa;
+  color: #6b7280;
+  border-color: #e5e7eb;
 }

@@ -409,6 +409,7 @@ async function loadPDFFile(file) {
     // Render first page
     await renderPage(currentPage);
     updatePagination();
+    handleSelectionCleared();
     showToast('PDF caricato con successo!', 'success');
   } catch (error) {
     console.error('Error loading PDF:', error);
@@ -620,21 +621,35 @@ function handleSelection(event) {
     textProperties.style.display = 'flex'; // Mantieni visibile
     deleteBtn.style.display = 'flex'; // Mantieni visibile
     
+    // Leggi e imposta i valori correnti
+    fontFamily.value = activeObject.fontFamily || 'Arial';
+    fontSize.value = activeObject.fontSize || 16;
+    fontColor.value = activeObject.fill || '#000000';
+    
+    // Aggiorna gli stili (bold, italic, underline)
+    boldBtn.classList.toggle('active', activeObject.fontWeight === 'bold');
+    italicBtn.classList.toggle('active', activeObject.fontStyle === 'italic');
+    underlineBtn.classList.toggle('active', activeObject.underline);
+
     // Abilita input
     const inputs = textProperties.querySelectorAll('input, select, button');
     inputs.forEach(input => input.disabled = false);
+
+    // Abilita pulsante elimina
+    deleteBtn.disabled = false;
   } else if (activeObject && activeObject.type === 'image') {
     // Disabilita controlli testo
     const inputs = textProperties.querySelectorAll('input, select, button');
     inputs.forEach(input => input.disabled = true); // Assicurati che sia true
     
-    // Abilita solo il pulsante elimina
+    // Abilita pulsante elimina
     deleteBtn.disabled = false;
   } else {
     // Niente selezionato: disabilita tutto
     const inputs = textProperties.querySelectorAll('input, select, button');
     inputs.forEach(input => input.disabled = true);
     
+    //Disabilita pulsante elimina
     deleteBtn.disabled = true;
   }
 }
