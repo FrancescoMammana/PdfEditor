@@ -90,6 +90,9 @@ function initializeApp() {
   setupTextListeners();
   setupPaginationListeners();
   
+  // Setup mobile-specific text editing handlers
+  setupMobileTextEditing();
+  
   console.log('App initialized successfully!');
 }
 
@@ -318,6 +321,37 @@ function setupPaginationListeners() {
   });
 }
 
+// Setup mobile-specific text editing handlers
+function setupMobileTextEditing() {
+  // Check if this is a mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  if (isMobile && fabricCanvas) {
+    // Gestione dell'evento editing exited per mobile
+    fabricCanvas.on('text:editing:exited', function(options) {
+      // Non cambiare subito il tool per permettere all'utente di finire di digitare
+      setTimeout(() => {
+        // Solo dopo un ritardo, cambia al select tool
+        if (currentTool === 'text') {
+          currentTool = 'select';
+          updateToolButtons();
+          fabricCanvas.selection = true;
+          fabricCanvas.defaultCursor = 'default';
+        }
+      }, 500); // Ritardo di 500ms per permettere la digitazione
+    });
+    
+    // Previene il blur accidentale su mobile
+    fabricCanvas.on('mouse:down', function(options) {
+      if (options.target && options.target.type === 'textbox') {
+        // Se è un textbox, non fare nulla lascia che l'editing continui
+      } else {
+        // Se è altro canvas, gestisci normalmente
+      }
+    });
+  }
+}
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
 
@@ -484,6 +518,9 @@ async function renderPage(pageNum) {
     }
     
     loadPageAnnotations(pageNum);
+    
+    // Setup mobile text editing if needed
+    setupMobileTextEditing();
   } catch (error) {
     console.error('Errore rendering pagina:', error);
     showToast('Errore nel rendering della pagina', 'error');
@@ -604,11 +641,27 @@ function handleCanvasClick(event) {
     textbox.enterEditing();
     textbox.selectAll();
     
-    // Switch back to select tool
-    currentTool = 'select';
-    updateToolButtons();
-    fabricCanvas.selection = true;
-    fabricCanvas.defaultCursor = 'default';
+    // Non cambiare subito tool su mobile per permettere la digitazione
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) {
+      // Switch back to select tool solo su desktop
+      currentTool = 'select';
+      updateToolButtons();
+      fabricCanvas.selection = true;
+      fabricCanvas.defaultCursor = 'default';
+    }
+    
+    // Previene il blur immediato su mobile
+    if (isMobile) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Mantieni il focus sul campo di testo
+      setTimeout(() => {
+        textbox.enterEditing();
+        textbox.selectAll();
+      }, 100);
+    }
   }
 }
 
