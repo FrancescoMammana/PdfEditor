@@ -338,32 +338,16 @@ function setupMobileTextEditing() {
           fabricCanvas.selection = true;
           fabricCanvas.defaultCursor = 'default';
         }
-      }, 500); // Ritardo di 500ms per permettere la digitazione
+      }, 1000); // Aumentato il ritardo a 1 secondo
     });
     
-    // Previene il blur accidentale su mobile
-    fabricCanvas.on('mouse:down', function(options) {
-      if (options.target && options.target.type === 'textbox') {
-        // Se è un textbox, mantieni l'editing
-        options.e.preventDefault();
-        options.e.stopPropagation();
-        // Forza il focus sulla textbox
-        const textbox = options.target;
-        textbox.enterEditing();
-        textbox.selectAll();
-      }
-    });
-    
-    // Gestione touch per mobile
+    // Gestione touch per mobile - preveniamo il blur
     fabricCanvas.on('touch:touch', function(options) {
       if (options.target && options.target.type === 'textbox') {
-        // Se è un textbox, mantieni l'editing
+        console.log('Touch on textbox, preventing default');
         options.e.preventDefault();
         options.e.stopPropagation();
-        // Forza il focus sulla textbox
-        const textbox = options.target;
-        textbox.enterEditing();
-        textbox.selectAll();
+        // Non forziamo l'editing qui, lasciamo che Fabric.js gestisca naturalmente
       }
     });
     
@@ -380,10 +364,21 @@ function setupMobileTextEditing() {
       if (options.target && options.target.type === 'textbox') {
         options.e.preventDefault();
         options.e.stopPropagation();
-        // Mantieni il focus sulla textbox
-        const textbox = options.target;
-        textbox.enterEditing();
-        textbox.selectAll();
+      }
+    });
+    
+    // Aggiungiamo un ritardo per permettere l'editing
+    fabricCanvas.on('mouse:down', function(options) {
+      if (options.target && options.target.type === 'textbox') {
+        options.e.preventDefault();
+        options.e.stopPropagation();
+        // Forziamo l'editing con un ritardo
+        setTimeout(() => {
+          if (options.target) {
+            options.target.enterEditing();
+            options.target.selectAll();
+          }
+        }, 100);
       }
     });
   }
