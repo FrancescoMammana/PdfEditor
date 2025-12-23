@@ -478,7 +478,7 @@ async function renderPage(pageNum) {
       fabricCanvas.on('selection:updated', handleSelection);
       fabricCanvas.on('selection:cleared', handleSelectionCleared);
       fabricCanvas.on('mouse:down', handleCanvasClick);
-      fabricCanvas.on('touch:touch', handleCanvasClick);
+      // fabricCanvas.on('touch:touch', handleCanvasClick);
     } else {
       fabricCanvas.setWidth(viewport.width);
       fabricCanvas.setHeight(viewport.height);
@@ -610,26 +610,26 @@ function handleCanvasClick(event) {
     textbox.selectAll();
     
     // Non cambiare subito tool su mobile per permettere la digitazione
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (!isMobile) {
-      // Switch back to select tool solo su desktop
-      currentTool = 'select';
-      updateToolButtons();
-      fabricCanvas.selection = true;
-      fabricCanvas.defaultCursor = 'default';
-    }
+    // const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // if (!isMobile) {
+    //   // Switch back to select tool solo su desktop
+    //   currentTool = 'select';
+    //   updateToolButtons();
+    //   fabricCanvas.selection = true;
+    //   fabricCanvas.defaultCursor = 'default';
+    // }
     
-    // Previene il blur immediato su mobile
-    if (isMobile) {
-      event.preventDefault();
-      event.stopPropagation();
+    // // Previene il blur immediato su mobile
+    // if (isMobile) {
+    //   event.preventDefault();
+    //   event.stopPropagation();
       
-      // Mantieni il focus sul campo di testo
-      setTimeout(() => {
-        textbox.enterEditing();
-        textbox.selectAll();
-      }, 100);
-    }
+    //   // Mantieni il focus sul campo di testo
+    //   setTimeout(() => {
+    //     textbox.enterEditing();
+    //     textbox.selectAll();
+    //   }, 100);
+    // }
   }
 }
 
