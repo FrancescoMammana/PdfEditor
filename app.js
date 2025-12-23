@@ -326,7 +326,7 @@ function setupMobileTextEditing() {
   // Check if this is a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
-  if (isMobile && fabricCanvas) {
+  // if (isMobile && fabricCanvas) {
     console.log('Setting up mobile text editing for:', navigator.userAgent);
     
     // Gestione dell'evento editing exited per mobile
@@ -403,7 +403,7 @@ function setupMobileTextEditing() {
         options.e.stopPropagation();
       }
     });
-  }
+  // }
 }
 
 // Initialize when DOM is ready
