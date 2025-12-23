@@ -344,9 +344,46 @@ function setupMobileTextEditing() {
     // Previene il blur accidentale su mobile
     fabricCanvas.on('mouse:down', function(options) {
       if (options.target && options.target.type === 'textbox') {
-        // Se è un textbox, non fare nulla lascia che l'editing continui
-      } else {
-        // Se è altro canvas, gestisci normalmente
+        // Se è un textbox, mantieni l'editing
+        options.e.preventDefault();
+        options.e.stopPropagation();
+        // Forza il focus sulla textbox
+        const textbox = options.target;
+        textbox.enterEditing();
+        textbox.selectAll();
+      }
+    });
+    
+    // Gestione touch per mobile
+    fabricCanvas.on('touch:touch', function(options) {
+      if (options.target && options.target.type === 'textbox') {
+        // Se è un textbox, mantieni l'editing
+        options.e.preventDefault();
+        options.e.stopPropagation();
+        // Forza il focus sulla textbox
+        const textbox = options.target;
+        textbox.enterEditing();
+        textbox.selectAll();
+      }
+    });
+    
+    // Gestione touch:move per prevenire lo spostamento accidentale
+    fabricCanvas.on('touch:move', function(options) {
+      if (options.target && options.target.type === 'textbox') {
+        options.e.preventDefault();
+        options.e.stopPropagation();
+      }
+    });
+    
+    // Gestione touch:end per mantenere il focus
+    fabricCanvas.on('touch:end', function(options) {
+      if (options.target && options.target.type === 'textbox') {
+        options.e.preventDefault();
+        options.e.stopPropagation();
+        // Mantieni il focus sulla textbox
+        const textbox = options.target;
+        textbox.enterEditing();
+        textbox.selectAll();
       }
     });
   }
