@@ -612,11 +612,11 @@ function handleCanvasClick(event) {
     // Non cambiare subito tool su mobile per permettere la digitazione
     // const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     // if (!isMobile) {
-    //   // Switch back to select tool solo su desktop
-    //   currentTool = 'select';
-    //   updateToolButtons();
-    //   fabricCanvas.selection = true;
-    //   fabricCanvas.defaultCursor = 'default';
+      // Switch back to select tool solo su desktop
+      currentTool = 'select';
+      updateToolButtons();
+      fabricCanvas.selection = true;
+      fabricCanvas.defaultCursor = 'default';
     // }
     
     // // Previene il blur immediato su mobile
