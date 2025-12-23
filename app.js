@@ -478,6 +478,7 @@ async function renderPage(pageNum) {
       fabricCanvas.on('selection:updated', handleSelection);
       fabricCanvas.on('selection:cleared', handleSelectionCleared);
       fabricCanvas.on('mouse:down', handleCanvasClick);
+      fabricCanvas.on('touch:touch', handleCanvasClick);
     } else {
       fabricCanvas.setWidth(viewport.width);
       fabricCanvas.setHeight(viewport.height);
