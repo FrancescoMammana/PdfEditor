@@ -91,7 +91,7 @@ function initializeApp() {
   setupPaginationListeners();
   
   // Setup mobile-specific text editing handlers
-  setupMobileTextEditing();
+  // setupMobileTextEditing();
   
   console.log('App initialized successfully!');
 }
@@ -321,95 +321,8 @@ function setupPaginationListeners() {
   });
 }
 
-// Setup mobile-specific text editing handlers
-function setupMobileTextEditing() {
-  // Check if this is a mobile device
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  
-  // if (isMobile && fabricCanvas) {
-    console.log('Setting up mobile text editing for:', navigator.userAgent);
-    
-    // Gestione dell'evento editing exited per mobile
-    fabricCanvas.on('text:editing:exited', function(options) {
-      console.log('Text editing exited on mobile');
-      // Non cambiare subito il tool per permettere all'utente di finire di digitare
-      setTimeout(() => {
-        // Solo dopo un ritardo, cambia al select tool
-        if (currentTool === 'text') {
-          currentTool = 'select';
-          updateToolButtons();
-          fabricCanvas.selection = true;
-          fabricCanvas.defaultCursor = 'default';
-        }
-      }, 1500); // Aumentato il ritardo a 1.5 secondi
-    });
-    
-    // Gestione touch per mobile - preveniamo completamente il blur
-    fabricCanvas.on('touch:touch', function(options) {
-      if (options.target && options.target.type === 'textbox') {
-        console.log('Touch on textbox, preventing default and stopping propagation');
-        options.e.preventDefault();
-        options.e.stopPropagation();
-        // Forziamo immediatamente l'editing
-        if (options.target) {
-          options.target.enterEditing();
-          options.target.selectAll();
-        }
-      }
-    });
-    
-    // Gestione touch:move per prevenire lo spostamento accidentale
-    fabricCanvas.on('touch:move', function(options) {
-      if (options.target && options.target.type === 'textbox') {
-        options.e.preventDefault();
-        options.e.stopPropagation();
-      }
-    });
-    
-    // Gestione touch:end per mantenere il focus
-    fabricCanvas.on('touch:end', function(options) {
-      if (options.target && options.target.type === 'textbox') {
-        options.e.preventDefault();
-        options.e.stopPropagation();
-        // Manteniamo l'editing
-        setTimeout(() => {
-          if (options.target) {
-            options.target.enterEditing();
-            options.target.selectAll();
-          }
-        }, 50);
-      }
-    });
-    
-    // Gestione mouse:down per desktop-like behavior
-    fabricCanvas.on('mouse:down', function(options) {
-      if (options.target && options.target.type === 'textbox') {
-        options.e.preventDefault();
-        options.e.stopPropagation();
-        // Forziamo l'editing con un ritardo
-        setTimeout(() => {
-          if (options.target) {
-            options.target.enterEditing();
-            options.target.selectAll();
-          }
-        }, 50);
-      }
-    });
-    
-    // Aggiungiamo un evento globale per prevenire il blur del canvas
-    fabricCanvas.on('mouse:up', function(options) {
-      if (options.target && options.target.type === 'textbox') {
-        options.e.preventDefault();
-        options.e.stopPropagation();
-      }
-    });
-  // }
-}
-
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
-
-
 
 // Handle PDF upload from file input event
 async function handlePDFUpload(event) {
@@ -574,7 +487,7 @@ async function renderPage(pageNum) {
     loadPageAnnotations(pageNum);
     
     // Setup mobile text editing if needed
-    setupMobileTextEditing();
+    // setupMobileTextEditing();
   } catch (error) {
     console.error('Errore rendering pagina:', error);
     showToast('Errore nel rendering della pagina', 'error');
