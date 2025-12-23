@@ -327,8 +327,11 @@ function setupMobileTextEditing() {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   if (isMobile && fabricCanvas) {
+    console.log('Setting up mobile text editing for:', navigator.userAgent);
+    
     // Gestione dell'evento editing exited per mobile
     fabricCanvas.on('text:editing:exited', function(options) {
+      console.log('Text editing exited on mobile');
       // Non cambiare subito il tool per permettere all'utente di finire di digitare
       setTimeout(() => {
         // Solo dopo un ritardo, cambia al select tool
@@ -338,16 +341,20 @@ function setupMobileTextEditing() {
           fabricCanvas.selection = true;
           fabricCanvas.defaultCursor = 'default';
         }
-      }, 1000); // Aumentato il ritardo a 1 secondo
+      }, 1500); // Aumentato il ritardo a 1.5 secondi
     });
     
-    // Gestione touch per mobile - preveniamo il blur
+    // Gestione touch per mobile - preveniamo completamente il blur
     fabricCanvas.on('touch:touch', function(options) {
       if (options.target && options.target.type === 'textbox') {
-        console.log('Touch on textbox, preventing default');
+        console.log('Touch on textbox, preventing default and stopping propagation');
         options.e.preventDefault();
         options.e.stopPropagation();
-        // Non forziamo l'editing qui, lasciamo che Fabric.js gestisca naturalmente
+        // Forziamo immediatamente l'editing
+        if (options.target) {
+          options.target.enterEditing();
+          options.target.selectAll();
+        }
       }
     });
     
@@ -364,10 +371,17 @@ function setupMobileTextEditing() {
       if (options.target && options.target.type === 'textbox') {
         options.e.preventDefault();
         options.e.stopPropagation();
+        // Manteniamo l'editing
+        setTimeout(() => {
+          if (options.target) {
+            options.target.enterEditing();
+            options.target.selectAll();
+          }
+        }, 50);
       }
     });
     
-    // Aggiungiamo un ritardo per permettere l'editing
+    // Gestione mouse:down per desktop-like behavior
     fabricCanvas.on('mouse:down', function(options) {
       if (options.target && options.target.type === 'textbox') {
         options.e.preventDefault();
@@ -378,7 +392,15 @@ function setupMobileTextEditing() {
             options.target.enterEditing();
             options.target.selectAll();
           }
-        }, 100);
+        }, 50);
+      }
+    });
+    
+    // Aggiungiamo un evento globale per prevenire il blur del canvas
+    fabricCanvas.on('mouse:up', function(options) {
+      if (options.target && options.target.type === 'textbox') {
+        options.e.preventDefault();
+        options.e.stopPropagation();
       }
     });
   }
