@@ -621,8 +621,8 @@ function handleCanvasClick(event) {
     
     // // Previene il blur immediato su mobile
     // if (isMobile) {
-    //   event.preventDefault();
-    //   event.stopPropagation();
+       event.preventDefault();
+       event.stopPropagation();
       
     //   // Mantieni il focus sul campo di testo
     //   setTimeout(() => {
