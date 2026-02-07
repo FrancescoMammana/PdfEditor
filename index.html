@@ -40,6 +40,9 @@
   <button id="imageTool" class="btn">🖼️ Immagine</button>
   <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
 
+  <button id="signatureTool" class="btn">✍️ Firma</button>
+  <input type="file" id="signatureFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+
   <div class="separator"></div>
   <!-- Proprietà testo (hidden inizialmente) -->
   <div id="textProperties" style="display: flex; gap: 8px; align-items: center;">
@@ -78,6 +81,16 @@
         <canvas id="pdfCanvas"></canvas>
         <canvas id="fabricCanvas"></canvas>
       </div>
+    </div>
+
+    <!-- Signature Panel -->
+    <div id="signaturePanel" class="signature-panel" style="display: none;">
+      <div class="signature-header">
+        <h3>✍️ Firme Salvate</h3>
+        <button id="closeSignaturePanel" class="btn btn-small">✕</button>
+      </div>
+      <div id="signatureList" class="signature-list"></div>
+      <button id="addSignatureBtn" class="btn btn-primary">+ Aggiungi Firma</button>
     </div>
 
     <!-- Pagination -->

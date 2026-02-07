@@ -21,6 +21,10 @@ let uploadBtnMain, pdfFileInputMain, uploadBtn;
 let copyBtn, cutBtn, pasteBtn;
 let clipboard = null; // Oggetto in clipboard per copia/incolla
 
+// Signature tool elements
+let signatureTool, signatureFileInput, signaturePanel;
+let closeSignaturePanel, signatureList, addSignatureBtn;
+
 // Toast notification
 function showToast(message, type = 'info') {
   const toast = document.getElementById('toast');
@@ -67,6 +71,14 @@ function initializeApp() {
   cutBtn = document.getElementById('cutBtn');
   pasteBtn = document.getElementById('pasteBtn');
   
+  // Signature tool elements
+  signatureTool = document.getElementById('signatureTool');
+  signatureFileInput = document.getElementById('signatureFileInput');
+  signaturePanel = document.getElementById('signaturePanel');
+  closeSignaturePanel = document.getElementById('closeSignaturePanel');
+  signatureList = document.getElementById('signatureList');
+  addSignatureBtn = document.getElementById('addSignatureBtn');
+  
   // Verify critical elements exist
   if (!uploadBtnMain) {
     console.error('ERRORE: uploadBtnMain non trovato!');
@@ -94,6 +106,7 @@ function initializeApp() {
   setupToolListeners();
   setupTextListeners();
   setupPaginationListeners();
+  setupSignatureListeners();
   
   // Disabilita inizialmente i pulsanti copia/taglia/incolla
   if (copyBtn) copyBtn.disabled = true;
@@ -1096,4 +1109,116 @@ function pasteObject() {
 
   showToast('Oggetto incollato!', 'success');
 }
+// Setup signature tool listeners
+function setupSignatureListeners() {
+  signatureTool.addEventListener('click', () => {
+    signaturePanel.style.display = signaturePanel.style.display === 'none' ? 'block' : 'none';
+    if (signaturePanel.style.display === 'block') {
+      loadSignaturesList();
+    }
+  });
+
+  closeSignaturePanel.addEventListener('click', () => {
+    signaturePanel.style.display = 'none';
+  });
+
+  addSignatureBtn.addEventListener('click', () => {
+    signatureFileInput.click();
+  });
+
+  signatureFileInput.addEventListener('change', handleSignatureUpload);
+}
+
+async function handleSignatureUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showToast('File troppo grande (max 5MB)', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    saveSignature(file.name, e.target.result);
+    loadSignaturesList();
+    showToast('Firma salvata!', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveSignature(name, data) {
+  const signatures = getSignatures();
+  const signature = {
+    id: Date.now().toString(),
+    name: name,
+    data: data,
+    size: data.length,
+    createdAt: new Date().toISOString()
+  };
+  signatures.push(signature);
+  localStorage.setItem('pdf_signatures', JSON.stringify(signatures));
+}
+
+function getSignatures() {
+  const stored = localStorage.getItem('pdf_signatures');
+  return stored ? JSON.parse(stored) : [];
+}
+
+function loadSignaturesList() {
+  const signatures = getSignatures();
+  signatureList.innerHTML = '';
+
+  if (signatures.length === 0) {
+    signatureList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Nessuna firma salvata</div>';
+    return;
+  }
+
+  signatures.forEach(sig => {
+    const item = document.createElement('div');
+    item.className = 'signature-item';
+    item.innerHTML = `
+      <img src="${sig.data}" alt="${sig.name}">
+      <span>${sig.name}</span>
+      <button class="delete-sig" data-id="${sig.id}">🗑️</button>
+    `;
+
+    item.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('delete-sig')) {
+        insertSignatureOnCanvas(sig.data);
+        signaturePanel.style.display = 'none';
+      }
+    });
+
+    item.querySelector('.delete-sig').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteSignature(sig.id);
+      loadSignaturesList();
+    });
+
+    signatureList.appendChild(item);
+  });
+}
+
+function insertSignatureOnCanvas(dataUrl) {
+  fabric.Image.fromURL(dataUrl, (img) => {
+    img.scale(0.3);
+    img.set({
+      left: 100,
+      top: 100
+    });
+    fabricCanvas.add(img);
+    fabricCanvas.setActiveObject(img);
+    fabricCanvas.renderAll();
+  });
+}
+
+function deleteSignature(id) {
+  let signatures = getSignatures();
+  signatures = signatures.filter(sig => sig.id !== id);
+  localStorage.setItem('pdf_signatures', JSON.stringify(signatures));
+  showToast('Firma eliminata', 'success');
+}
+
 // Fixed PDF export with proper buffer copy

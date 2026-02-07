@@ -1160,3 +1160,91 @@ body {
   color: #6b7280;
   border-color: #e5e7eb;
 }
+
+/* Signature Panel */
+.signature-panel {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 280px;
+  max-height: 70vh;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+  z-index: 1001;
+  overflow-y: auto;
+}
+
+.signature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.signature-header h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.signature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.signature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-background);
+  cursor: pointer;
+  transition: all var(--duration-normal) ease;
+}
+
+.signature-item:hover {
+  border-color: var(--color-primary);
+}
+
+.signature-item img {
+  width: 60px;
+  height: 40px;
+  object-fit: contain;
+  background: white;
+  border-radius: 4px;
+}
+
+.signature-item span {
+  flex: 1;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signature-item .delete-sig {
+  padding: 4px 8px;
+  height: 28px;
+  font-size: 12px;
+  background: var(--color-red-500);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.signature-item .delete-sig:hover {
+  background: #b91c1c;
+}
