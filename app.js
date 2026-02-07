@@ -18,6 +18,8 @@ let textProperties, deleteSection, imageFileInput;
 let selectTool, textTool, imageTool, exportBtn, deleteBtn;
 let fontFamily, fontSize, fontColor, boldBtn, italicBtn, underlineBtn;
 let uploadBtnMain, pdfFileInputMain, uploadBtn;
+let copyBtn, cutBtn, pasteBtn;
+let clipboard = null; // Oggetto in clipboard per copia/incolla
 
 // Toast notification
 function showToast(message, type = 'info') {
@@ -61,6 +63,9 @@ function initializeApp() {
   uploadBtnMain = document.getElementById('uploadBtnMain');
   pdfFileInputMain = document.getElementById('pdfFileInputMain');
   uploadBtn = document.getElementById('uploadBtn');
+  copyBtn = document.getElementById('copyBtn');
+  cutBtn = document.getElementById('cutBtn');
+  pasteBtn = document.getElementById('pasteBtn');
   
   // Verify critical elements exist
   if (!uploadBtnMain) {
@@ -89,6 +94,10 @@ function initializeApp() {
   setupToolListeners();
   setupTextListeners();
   setupPaginationListeners();
+  
+  // Disabilita inizialmente i pulsanti copia/taglia/incolla
+  if (copyBtn) copyBtn.disabled = true;
+  if (cutBtn) cutBtn.disabled = true;
   
   // Setup mobile-specific text editing handlers
   // setupMobileTextEditing();
@@ -223,6 +232,14 @@ function setupToolListeners() {
       fabricCanvas.renderAll();
     }
   });
+
+  // Event listeners per Copia, Taglia e Incolla
+  copyBtn.addEventListener('click', copySelectedObject);
+  cutBtn.addEventListener('click', cutSelectedObject);
+  pasteBtn.addEventListener('click', pasteObject);
+
+  // Scorciatoie da tastiera
+  document.addEventListener('keydown', handleKeyboardShortcuts);
   
   exportBtn.addEventListener('click', async function() {
     console.log('Export button clicked');
@@ -673,6 +690,15 @@ function handleSelection(event) {
     //Disabilita pulsante elimina
     deleteBtn.disabled = true;
   }
+  
+  // Gestione pulsanti copia/taglia
+  if (activeObject) {
+    copyBtn.disabled = false;
+    cutBtn.disabled = false;
+  } else {
+    copyBtn.disabled = true;
+    cutBtn.disabled = true;
+  }
 }
 
 function handleSelectionCleared() {
@@ -684,6 +710,10 @@ function handleSelectionCleared() {
   inputs.forEach(input => input.disabled = true);
   
   deleteBtn.disabled = true;
+  
+  // Disabilita pulsanti copia/taglia
+  if (copyBtn) copyBtn.disabled = true;
+  if (cutBtn) cutBtn.disabled = true;
 }
 
 function updatePagination() {
@@ -884,5 +914,157 @@ function hexToRgb(hex) {
     g: parseInt(result[2], 16),
     b: parseInt(result[3], 16)
   } : { r: 0, g: 0, b: 0 };
+}
+
+// Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V)
+function handleKeyboardShortcuts(e) {
+  // Non intercettare se si sta modificando un testo
+  if (fabricCanvas && fabricCanvas.getActiveObject() && 
+      fabricCanvas.getActiveObject().isEditing) {
+    return;
+  }
+
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+    copySelectedObject();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+    cutSelectedObject();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+    e.preventDefault();
+    pasteObject();
+  }
+}
+
+// Copia l'oggetto selezionato
+function copySelectedObject() {
+  if (!fabricCanvas) return;
+  
+  const activeObject = fabricCanvas.getActiveObject();
+  if (!activeObject) {
+    showToast('Seleziona un oggetto da copiare', 'info');
+    return;
+  }
+
+  // Crea una copia profonda dei dati dell'oggetto
+  if (activeObject.type === 'textbox') {
+    clipboard = {
+      type: 'text',
+      text: activeObject.text,
+      fontFamily: activeObject.fontFamily,
+      fontSize: activeObject.fontSize,
+      fill: activeObject.fill,
+      fontWeight: activeObject.fontWeight,
+      fontStyle: activeObject.fontStyle,
+      underline: activeObject.underline,
+      width: activeObject.width,
+      scaleX: activeObject.scaleX,
+      scaleY: activeObject.scaleY,
+      angle: activeObject.angle || 0
+    };
+  } else if (activeObject.type === 'image') {
+    clipboard = {
+      type: 'image',
+      src: activeObject.toDataURL(),
+      left: activeObject.left,
+      top: activeObject.top,
+      width: activeObject.width,
+      height: activeObject.height,
+      scaleX: activeObject.scaleX,
+      scaleY: activeObject.scaleY,
+      angle: activeObject.angle || 0
+    };
+  }
+
+  showToast('Oggetto copiato!', 'success');
+}
+
+// Taglia l'oggetto selezionato (copia e rimuove)
+function cutSelectedObject() {
+  if (!fabricCanvas) return;
+  
+  const activeObject = fabricCanvas.getActiveObject();
+  if (!activeObject) {
+    showToast('Seleziona un oggetto da tagliare', 'info');
+    return;
+  }
+
+  // Prima copia
+  copySelectedObject();
+  
+  // Poi rimuovi
+  fabricCanvas.remove(activeObject);
+  fabricCanvas.discardActiveObject();
+  fabricCanvas.renderAll();
+  handleSelectionCleared();
+  
+  showToast('Oggetto tagliato!', 'success');
+}
+
+// Incolla l'oggetto dalla clipboard
+function pasteObject() {
+  if (!fabricCanvas) return;
+  
+  if (!clipboard) {
+    showToast('Nessun oggetto da incollare', 'info');
+    return;
+  }
+
+  // Offset per distinguere l'oggetto incollato dall'originale
+  const offset = 20;
+
+  if (clipboard.type === 'text') {
+    const textbox = new fabric.Textbox(clipboard.text, {
+      left: (clipboard.left || 100) + offset,
+      top: (clipboard.top || 100) + offset,
+      fontFamily: clipboard.fontFamily,
+      fontSize: clipboard.fontSize,
+      fill: clipboard.fill,
+      fontWeight: clipboard.fontWeight,
+      fontStyle: clipboard.fontStyle,
+      underline: clipboard.underline,
+      width: clipboard.width,
+      scaleX: clipboard.scaleX || 1,
+      scaleY: clipboard.scaleY || 1,
+      angle: clipboard.angle || 0,
+      editable: true
+    });
+    
+    fabricCanvas.add(textbox);
+    fabricCanvas.setActiveObject(textbox);
+    fabricCanvas.renderAll();
+    
+    // Aggiorna la posizione nella clipboard per il prossimo incolla
+    clipboard.left = (clipboard.left || 100) + offset;
+    clipboard.top = (clipboard.top || 100) + offset;
+    
+  } else if (clipboard.type === 'image') {
+    fabric.Image.fromURL(clipboard.src, (img) => {
+      // Calcola il fattore di scala necessario per ottenere le stesse dimensioni visibili
+      const originalDisplayWidth = clipboard.width * clipboard.scaleX;
+      const originalDisplayHeight = clipboard.height * clipboard.scaleY;
+      
+      const newScaleX = originalDisplayWidth / img.width;
+      const newScaleY = originalDisplayHeight / img.height;
+      
+      img.set({
+        left: (clipboard.left || 100) + offset,
+        top: (clipboard.top || 100) + offset,
+        scaleX: newScaleX,
+        scaleY: newScaleY,
+        angle: clipboard.angle || 0
+      });
+      
+      fabricCanvas.add(img);
+      fabricCanvas.setActiveObject(img);
+      fabricCanvas.renderAll();
+      
+      // Aggiorna la posizione nella clipboard per il prossimo incolla
+      clipboard.left = (clipboard.left || 100) + offset;
+      clipboard.top = (clipboard.top || 100) + offset;
+    });
+  }
+
+  showToast('Oggetto incollato!', 'success');
 }
 // Fixed PDF export with proper buffer copy
