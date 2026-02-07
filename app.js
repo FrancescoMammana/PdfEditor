@@ -540,15 +540,15 @@ function savePageAnnotations() {
         width: obj.width
       };
     } else if (obj.type === 'image') {
+      // Salva le dimensioni visualizzate (finali) invece di width/height + scale
+      // Questo permette di ricalcolare correttamente lo scale quando si ricarica l'immagine
       return {
         type: 'image',
         src: obj.toDataURL(),
         left: obj.left,
         top: obj.top,
-        width: obj.width,
-        height: obj.height,
-        scaleX: obj.scaleX,
-        scaleY: obj.scaleY,
+        displayWidth: obj.width * obj.scaleX,
+        displayHeight: obj.height * obj.scaleY,
         angle: obj.angle
       };
     }
@@ -583,11 +583,31 @@ function loadPageAnnotations(pageNum) {
       fabricCanvas.add(textbox);
     } else if (annotation.type === 'image') {
       fabric.Image.fromURL(annotation.src, (img) => {
+        let scaleX, scaleY;
+        
+        // Nuovo formato: usa displayWidth/displayHeight
+        if (annotation.displayWidth && annotation.displayHeight) {
+          scaleX = annotation.displayWidth / img.width;
+          scaleY = annotation.displayHeight / img.height;
+        } 
+        // Retrocompatibilità: vecchio formato con width/height/scaleX/scaleY
+        else if (annotation.scaleX && annotation.scaleY) {
+          const displayWidth = annotation.width * annotation.scaleX;
+          const displayHeight = annotation.height * annotation.scaleY;
+          scaleX = displayWidth / img.width;
+          scaleY = displayHeight / img.height;
+        }
+        // Fallback
+        else {
+          scaleX = 1;
+          scaleY = 1;
+        }
+        
         img.set({
           left: annotation.left,
           top: annotation.top,
-          scaleX: annotation.scaleX,
-          scaleY: annotation.scaleY,
+          scaleX: scaleX,
+          scaleY: scaleY,
           angle: annotation.angle || 0
         });
         fabricCanvas.add(img);
@@ -971,10 +991,8 @@ function copySelectedObject() {
       src: activeObject.toDataURL(),
       left: activeObject.left,
       top: activeObject.top,
-      width: activeObject.width,
-      height: activeObject.height,
-      scaleX: activeObject.scaleX,
-      scaleY: activeObject.scaleY,
+      displayWidth: activeObject.width * activeObject.scaleX,
+      displayHeight: activeObject.height * activeObject.scaleY,
       angle: activeObject.angle || 0
     };
   }
@@ -1043,18 +1061,15 @@ function pasteObject() {
     
   } else if (clipboard.type === 'image') {
     fabric.Image.fromURL(clipboard.src, (img) => {
-      // Calcola il fattore di scala necessario per ottenere le stesse dimensioni visibili
-      const originalDisplayWidth = clipboard.width * clipboard.scaleX;
-      const originalDisplayHeight = clipboard.height * clipboard.scaleY;
-      
-      const newScaleX = originalDisplayWidth / img.width;
-      const newScaleY = originalDisplayHeight / img.height;
+      // Usa displayWidth/displayHeight per calcolare lo scale corretto
+      const scaleX = clipboard.displayWidth / img.width;
+      const scaleY = clipboard.displayHeight / img.height;
       
       img.set({
         left: (clipboard.left || 100) + offset,
         top: (clipboard.top || 100) + offset,
-        scaleX: newScaleX,
-        scaleY: newScaleY,
+        scaleX: scaleX,
+        scaleY: scaleY,
         angle: clipboard.angle || 0
       });
       
