@@ -625,6 +625,11 @@ function handleCanvasClick(event) {
     fabricCanvas.setActiveObject(textbox);
     textbox.enterEditing();
     textbox.selectAll();
+
+    textbox.addEventListener('pointerdown', function (event) {
+      event.preventDefault();      // blocca il focus automatico sul pannello
+      event.stopPropagation();     // opzionale: non far salire l’evento
+    });
     
     // Non cambiare subito tool su mobile per permettere la digitazione
     // const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -638,8 +643,8 @@ function handleCanvasClick(event) {
     
     // // Previene il blur immediato su mobile
     // if (isMobile) {
-    //   event.preventDefault();
-    //   event.stopPropagation();
+      //  event.preventDefault();
+      //  event.stopPropagation();
       
     //   // Mantieni il focus sul campo di testo
     //   setTimeout(() => {
@@ -724,9 +729,7 @@ function updatePagination() {
 
 async function exportPDF() {
   try {
-   // console.log('Starting PDF export...');
-    
-    // VERIFICA CHE pdfBytes ESISTA E SIA VALIDO
+   
     if (!pdfDoc) {
       throw new Error('Nessun PDF caricato');
     }
