@@ -224,14 +224,7 @@ function setupToolListeners() {
     reader.readAsDataURL(file);
   });
   
-  deleteBtn.addEventListener('click', () => {
-    const activeObject = fabricCanvas.getActiveObject();
-    if (activeObject) {
-      fabricCanvas.remove(activeObject);
-      fabricCanvas.discardActiveObject();
-      fabricCanvas.renderAll();
-    }
-  });
+  deleteBtn.addEventListener('click', deleteSelectedObject);
 
   // Event listeners per Copia, Taglia e Incolla
   copyBtn.addEventListener('click', copySelectedObject);
@@ -741,6 +734,20 @@ function handleSelectionCleared() {
   if (cutBtn) cutBtn.disabled = true;
 }
 
+// Cancella l'oggetto selezionato
+function deleteSelectedObject() {
+  if (!fabricCanvas) return;
+  
+  const activeObject = fabricCanvas.getActiveObject();
+  if (activeObject) {
+    fabricCanvas.remove(activeObject);
+    fabricCanvas.discardActiveObject();
+    fabricCanvas.renderAll();
+    handleSelectionCleared();
+    showToast('Oggetto eliminato', 'success');
+  }
+}
+
 function updatePagination() {
   pageInfo.textContent = `Pagina ${currentPage} di ${totalPages}`;
   prevPageBtn.disabled = currentPage === 1;
@@ -939,7 +946,7 @@ function hexToRgb(hex) {
   } : { r: 0, g: 0, b: 0 };
 }
 
-// Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V)
+// Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V, Delete)
 function handleKeyboardShortcuts(e) {
   // Non intercettare se si sta modificando un testo
   if (fabricCanvas && fabricCanvas.getActiveObject() && 
@@ -956,6 +963,10 @@ function handleKeyboardShortcuts(e) {
   } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
     e.preventDefault();
     pasteObject();
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    // Cancella oggetto selezionato con tasto Canc o Backspace
+    e.preventDefault();
+    deleteSelectedObject();
   }
 }
 
