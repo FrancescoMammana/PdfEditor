@@ -75,6 +75,21 @@
   <button id="exportBtn" class="btn btn-primary">💾 Esporta PDF</button>
 </div>
 
+    <!-- Pagination -->
+    <div id="pagination" class="pagination" style="display: none;">
+      <button id="prevPage" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <span id="pageInfo" class="page-info">Pagina 1 di 1</span>
+      <button id="nextPage" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+
     <!-- Canvas Container -->
     <div id="canvasContainer" class="canvas-container" style="display: none;">
       <div class="canvas-wrapper">
@@ -93,19 +108,17 @@
       <button id="addSignatureBtn" class="btn btn-primary">+ Aggiungi Firma</button>
     </div>
 
-    <!-- Pagination -->
-    <div id="pagination" class="pagination" style="display: none;">
-      <button id="prevPage" class="btn btn-secondary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
-      <span id="pageInfo" class="page-info">Pagina 1 di 1</span>
-      <button id="nextPage" class="btn btn-secondary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
+    <!-- Export Dialog -->
+    <div id="exportDialog" class="export-dialog" style="display: none;">
+      <div class="export-dialog-content">
+        <h3>Esporta PDF</h3>
+        <label for="exportFilename">Nome file:</label>
+        <input type="text" id="exportFilename" placeholder="documento_modificato.pdf">
+        <div class="export-dialog-buttons">
+          <button id="cancelExport" class="btn">Annulla</button>
+          <button id="confirmExport" class="btn btn-primary">Esporta</button>
+        </div>
+      </div>
     </div>
   </div>
 

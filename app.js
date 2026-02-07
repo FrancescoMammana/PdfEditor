@@ -9,6 +9,7 @@ let fabricCanvas = null;
 let currentTool = 'select';
 let pdfBytes = null;
 let pageAnnotations = {}; // Store annotations per page
+let originalFilename = ''; // Nome del file PDF originale caricato
 
 
 // DOM elements - declared but not initialized yet
@@ -24,6 +25,9 @@ let clipboard = null; // Oggetto in clipboard per copia/incolla
 // Signature tool elements
 let signatureTool, signatureFileInput, signaturePanel;
 let closeSignaturePanel, signatureList, addSignatureBtn;
+
+// Export dialog elements
+let exportDialog, exportFilename, cancelExport, confirmExport;
 
 // Toast notification
 function showToast(message, type = 'info') {
@@ -79,6 +83,12 @@ function initializeApp() {
   signatureList = document.getElementById('signatureList');
   addSignatureBtn = document.getElementById('addSignatureBtn');
   
+  // Export dialog elements
+  exportDialog = document.getElementById('exportDialog');
+  exportFilename = document.getElementById('exportFilename');
+  cancelExport = document.getElementById('cancelExport');
+  confirmExport = document.getElementById('confirmExport');
+  
   // Verify critical elements exist
   if (!uploadBtnMain) {
     console.error('ERRORE: uploadBtnMain non trovato!');
@@ -107,6 +117,7 @@ function initializeApp() {
   setupTextListeners();
   setupPaginationListeners();
   setupSignatureListeners();
+  setupExportDialogListeners();
   
   // Disabilita inizialmente i pulsanti copia/taglia/incolla
   if (copyBtn) copyBtn.disabled = true;
@@ -247,9 +258,69 @@ function setupToolListeners() {
   // Scorciatoie da tastiera
   document.addEventListener('keydown', handleKeyboardShortcuts);
   
-  exportBtn.addEventListener('click', async function() {
-    console.log('Export button clicked');
-    await exportPDF();
+  exportBtn.addEventListener('click', () => {
+    showExportDialog();
+  });
+}
+
+// Show export dialog with default filename
+function showExportDialog() {
+  if (!pdfDoc) {
+    showToast('Nessun PDF caricato', 'error');
+    return;
+  }
+
+  // Calculate default filename based on original
+  let defaultName = 'documento_modificato.pdf';
+  if (originalFilename) {
+    const nameWithoutExt = originalFilename.replace(/\.pdf$/i, '');
+    defaultName = `${nameWithoutExt}_modificato.pdf`;
+  }
+  
+  console.log('Opening export dialog. originalFilename:', originalFilename, 'defaultName:', defaultName);
+
+  // Force set the value
+  exportFilename.value = '';
+  exportFilename.value = defaultName;
+  
+  // Show dialog
+  exportDialog.style.display = 'flex';
+  
+  // Focus and select after a small delay to ensure DOM update
+  setTimeout(() => {
+    exportFilename.focus();
+    exportFilename.select();
+  }, 10);
+}
+
+// Setup export dialog listeners
+function setupExportDialogListeners() {
+  cancelExport.addEventListener('click', () => {
+    exportDialog.style.display = 'none';
+  });
+
+  confirmExport.addEventListener('click', async () => {
+    const filename = exportFilename.value.trim();
+    if (!filename) {
+      showToast('Inserisci un nome per il file', 'error');
+      return;
+    }
+
+    let finalFilename = filename;
+    if (!filename.toLowerCase().endsWith('.pdf')) {
+      finalFilename = `${filename}.pdf`;
+    }
+
+    exportDialog.style.display = 'none';
+    await exportPDF(finalFilename);
+  });
+
+  exportFilename.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      confirmExport.click();
+    } else if (e.key === 'Escape') {
+      cancelExport.click();
+    }
   });
 }
 
@@ -379,7 +450,9 @@ async function handlePDFUploadFromFile(file) {
 // Load and render PDF from file
 async function loadPDFFile(file) {
   try {
-    ///console.log('Loading PDF:', file.name);
+    // Salva il nome del file originale
+    originalFilename = file.name;
+    
     showToast('Caricamento PDF in corso...', 'info');
     
     // Read file as ArrayBuffer using FileReader for better compatibility
@@ -525,6 +598,15 @@ function saveCurrentPageAnnotations() {
 
 function savePageAnnotations() {
   if (!fabricCanvas) return;
+  
+  // Exit editing mode for any active text object
+  const activeObject = fabricCanvas.getActiveObject();
+  if (activeObject && activeObject.isEditing) {
+    activeObject.exitEditing();
+  }
+  
+  fabricCanvas.discardActiveObject();
+  fabricCanvas.renderAll();
   
   const objects = fabricCanvas.getObjects();
   const annotations = objects.map(obj => {
@@ -767,9 +849,8 @@ function updatePagination() {
   nextPageBtn.disabled = currentPage === totalPages;
 }
 
-async function exportPDF() {
+async function exportPDF(filename) {
   try {
-   
     if (!pdfDoc) {
       throw new Error('Nessun PDF caricato');
     }
@@ -895,8 +976,8 @@ async function exportPDF() {
                 image = await pdfLibDoc.embedJpg(imageBytes);
               }
               
-              const imgWidth = (annotation.width * annotation.scaleX) / scale;
-              const imgHeight = (annotation.height * annotation.scaleY) / scale;
+              const imgWidth = (annotation.displayWidth || annotation.width) / scale;
+              const imgHeight = (annotation.displayHeight || annotation.height) / scale;
               const pdfX = annotation.left / scale;
               const pdfY = height - (annotation.top / scale) - imgHeight;
               
@@ -928,7 +1009,7 @@ async function exportPDF() {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'documento_modificato.pdf';
+    link.download = filename;
     link.style.display = 'none';
     
     document.body.appendChild(link);

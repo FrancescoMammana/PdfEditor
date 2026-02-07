@@ -1048,7 +1048,7 @@ body {
   gap: var(--space-16);
   padding: var(--space-16) var(--space-24);
   background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .page-info {
@@ -1247,4 +1247,60 @@ body {
 
 .signature-item .delete-sig:hover {
   background: #b91c1c;
+}
+
+/* Export Dialog */
+.export-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.export-dialog-content {
+  background: var(--color-surface);
+  padding: 24px;
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-lg);
+  min-width: 300px;
+  max-width: 90vw;
+}
+
+.export-dialog-content h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.export-dialog-content label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.export-dialog-content input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  font-size: 14px;
+  margin-bottom: 16px;
+  font-family: var(--font-family-base);
+}
+
+.export-dialog-content input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.export-dialog-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
 }
