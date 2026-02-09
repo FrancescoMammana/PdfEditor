@@ -25,13 +25,21 @@
 
   /* RGB versions for opacity control */
   --color-brown-600-rgb: 94, 82, 64;
-  --color-teal-500-rgb: 33, 128, 141;
+  --color-blue-500-rgb: 37, 99, 235;
   --color-slate-900-rgb: 19, 52, 59;
   --color-slate-500-rgb: 98, 108, 113;
   --color-red-500-rgb: 192, 21, 47;
   --color-red-400-rgb: 255, 84, 89;
   --color-orange-500-rgb: 168, 75, 47;
   --color-orange-400-rgb: 230, 129, 97;
+  
+  /* New Blue Color Tokens */
+  --color-blue-300: rgba(147, 197, 253, 1);
+  --color-blue-400: rgba(96, 165, 250, 1);
+  --color-blue-500: rgba(37, 99, 235, 1);
+  --color-blue-600: rgba(29, 78, 216, 1);
+  --color-blue-700: rgba(30, 64, 175, 1);
+  --color-blue-800: rgba(30, 58, 138, 1);
 
   /* Background color tokens (Light Mode) */
   --color-bg-1: rgba(59, 130, 246, 0.08); /* Light blue */
@@ -48,9 +56,9 @@
   --color-surface: var(--color-cream-100);
   --color-text: var(--color-slate-900);
   --color-text-secondary: var(--color-slate-500);
-  --color-primary: var(--color-teal-500);
-  --color-primary-hover: var(--color-teal-600);
-  --color-primary-active: var(--color-teal-700);
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-600);
+  --color-primary-active: var(--color-blue-700);
   --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
   --color-secondary-hover: rgba(var(--color-brown-600-rgb), 0.2);
   --color-secondary-active: rgba(var(--color-brown-600-rgb), 0.25);
@@ -266,7 +274,7 @@
 [data-color-scheme="light"] {
   /* RGB versions for opacity control (light mode) */
   --color-brown-600-rgb: 94, 82, 64;
-  --color-teal-500-rgb: 33, 128, 141;
+  --color-blue-500-rgb: 37, 99, 235;
   --color-slate-900-rgb: 19, 52, 59;
 
   /* Semantic Color Tokens (Light Mode) */
@@ -274,9 +282,9 @@
   --color-surface: var(--color-cream-100);
   --color-text: var(--color-slate-900);
   --color-text-secondary: var(--color-slate-500);
-  --color-primary: var(--color-teal-500);
-  --color-primary-hover: var(--color-teal-600);
-  --color-primary-active: var(--color-teal-700);
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-600);
+  --color-primary-active: var(--color-blue-700);
   --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
   --color-secondary-hover: rgba(var(--color-brown-600-rgb), 0.2);
   --color-secondary-active: rgba(var(--color-brown-600-rgb), 0.25);
@@ -764,15 +772,15 @@ select.form-control {
   --color-orange-500: rgba(168, 75, 47, 1);
 
   --color-brown-600-rgb: 94, 82, 64;
-  --color-teal-500-rgb: 33, 128, 141;
+  --color-blue-500-rgb: 37, 99, 235;
   --color-slate-900-rgb: 19, 52, 59;
 
   --color-background: var(--color-cream-50);
   --color-surface: var(--color-cream-100);
   --color-text: var(--color-slate-900);
   --color-text-secondary: var(--color-slate-500);
-  --color-primary: var(--color-teal-500);
-  --color-primary-hover: var(--color-teal-600);
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-600);
   --color-border: rgba(var(--color-brown-600-rgb), 0.2);
   
   --font-family-base: "FKGroteskNeue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -1303,4 +1311,693 @@ body {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+/* ============================================
+   GLASSMORPHISM STYLES - Added for Graphic Restyling
+   ============================================ */
+
+/* Glass effect base class */
+.glass-effect {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Floating toolbar style */
+.floating-glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+}
+
+.dark .floating-glass {
+  background: rgba(30, 30, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Navigation header glass effect */
+.nav-header {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.dark .nav-header {
+  background: rgba(30, 30, 30, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   ANIMATIONS - Added for Graphic Restyling
+   ============================================ */
+
+/* Pulse animation for upload icon */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+.upload-icon {
+  animation: pulse 2s infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+.btn {
+  transition: all 200ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Modern upload area styles */
+.upload-area-modern {
+  border: 2px dashed var(--color-border);
+  border-radius: 16px;
+  transition: all 300ms ease;
+}
+
+.upload-area-modern:hover {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(37, 99, 235, 0.2);
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 200ms ease;
+  z-index: 9999;
+}
+
+.dark-mode-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Floating pagination bar */
+.pagination.floating-glass {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  z-index: 100;
+}
+
+/* Toolbar floating style */
+.toolbar.floating-glass {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: 12px 24px;
+  z-index: 100;
+}
+
+/* Security badges */
+.security-badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  opacity: 0.6;
+  transition: opacity 300ms ease;
+}
+
+.security-badges:hover {
+  opacity: 1;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Footer styles */
+.app-footer {
+  padding: 32px 24px;
+  border-top: 1px solid var(--color-border);
+  margin-top: auto;
+}
+
+/* Gradient border effect for upload */
+.upload-gradient-border {
+  position: relative;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  padding: 2px;
+  border-radius: 16px;
+}
+
+.upload-gradient-border > div {
+  background: var(--color-surface);
+  border-radius: 14px;
+}
+/* ============================================
+   NAVIGATION HEADER STYLES
+   ============================================ */
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-logo {
+  width: 28px;
+  height: 28px;
+  color: var(--color-primary);
+}
+
+.nav-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.5px;
+}
+
+.nav-title-accent {
+  color: var(--color-primary);
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.nav-link:hover {
+  color: var(--color-primary);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dark-toggle-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: all 200ms ease;
+}
+
+.dark-toggle-nav:hover {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.dark-toggle-nav svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================
+   UPLOAD AREA MODERN STYLES
+   ============================================ */
+
+.upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.upload-gradient-border {
+  position: relative;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  padding: 2px;
+  border-radius: 20px;
+  width: 100%;
+}
+
+.upload-inner {
+  background: var(--color-surface);
+  border-radius: 18px;
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.upload-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.upload-title .text-primary {
+  color: var(--color-primary);
+}
+
+.upload-subtitle {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin-bottom: 32px;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-large {
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);
+}
+
+.btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.upload-hint {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+/* ============================================
+   FOOTER STYLES
+   ============================================ */
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .footer-container {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+.footer-copyright {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.footer-link:hover {
+  color: var(--color-primary);
+}
+
+/* Responsive navigation */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  
+  .nav-actions .btn-secondary {
+    display: none;
+  }
+}
+/* ============================================
+   TOOLBAR FLOATING GLASSMORPHISM STYLES
+   ============================================ */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.toolbar.floating-glass {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 95%;
+  width: auto;
+  z-index: 1000;
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--color-border);
+  margin: 0 4px;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #000000;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.toolbar-btn:hover {
+  background: var(--color-secondary);
+  border-color: var(--color-border);
+}
+
+.toolbar-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.toolbar-text-props {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-select {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.toolbar-input {
+  width: 60px;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.toolbar-color {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.toolbar-format-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbar-format-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.export-btn {
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Responsive toolbar */
+@media (max-width: 1024px) {
+  .toolbar.floating-glass {
+    top: 10px;
+    padding: 10px 16px;
+  }
+  
+  .toolbar-section.tools-group {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar-btn span {
+    display: none;
+  }
+  
+  .toolbar-text-props {
+    display: none;
+  }
+}
+
+/* ============================================
+   PAGINATION FLOATING GLASSMORPHISM STYLES
+   ============================================ */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+}
+
+.pagination.floating-glass {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+}
+
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: #000000;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.pagination-btn:hover {
+  background: var(--color-secondary);
+  border-color: var(--color-primary);
+}
+
+.page-info {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  min-width: 100px;
+  text-align: center;
+}
+
+.pagination-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border);
+}
+
+.pagination-zoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-info {
+  font-size: 13px;
+  font-weight: 500;
+  color: #000000;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* ============================================
+   APP CONTAINER LAYOUT
+   ============================================ */
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+
+/* Canvas container adjustments for floating elements */
+.canvas-container {
+  padding-top: 140px;
+  padding-bottom: 100px;
+}
+
+/* ============================================
+   DARK MODE OVERRIDES FOR TOOLBAR & PAGINATION
+   ============================================ */
+
+[data-color-scheme="dark"] .toolbar-btn {
+  color: var(--color-text);
+}
+
+[data-color-scheme="dark"] .toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-color-scheme="dark"] .toolbar-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+[data-color-scheme="dark"] .toolbar-divider {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-color-scheme="dark"] .pagination-btn {
+  color: var(--color-text);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-color-scheme="dark"] .pagination-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-primary);
+}
+
+[data-color-scheme="dark"] .page-info {
+  color: var(--color-text);
+}
+
+[data-color-scheme="dark"] .zoom-info {
+  color: var(--color-text);
+}
+
+[data-color-scheme="dark"] .pagination-divider {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Glass effect adjustments for dark mode */
+[data-color-scheme="dark"] .floating-glass {
+  background: rgba(55, 55, 65, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark mode styles for upload area */
+[data-color-scheme="dark"] .upload-inner {
+  background: rgba(55, 55, 65, 0.9);
+}
+
+[data-color-scheme="dark"] .upload-gradient-border {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
 }

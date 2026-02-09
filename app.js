@@ -1303,3 +1303,57 @@ function deleteSignature(id) {
 }
 
 // Fixed PDF export with proper buffer copy
+
+// ============================================
+// DARK MODE TOGGLE FUNCTIONALITY
+// ============================================
+
+function setupDarkModeToggle() {
+  const darkToggleFloating = document.getElementById('darkModeToggle');
+  
+  // Load saved preference or use system preference
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    document.documentElement.setAttribute('data-color-scheme', 'dark');
+    updateDarkModeIcons(true);
+  } else {
+    document.documentElement.setAttribute('data-color-scheme', 'light');
+    updateDarkModeIcons(false);
+  }
+  
+  // Add event listener to floating toggle button
+  if (darkToggleFloating) {
+    darkToggleFloating.addEventListener('click', toggleDarkMode);
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-color-scheme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  
+  document.documentElement.setAttribute('data-color-scheme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateDarkModeIcons(!isDark);
+}
+
+function updateDarkModeIcons(isDark) {
+  const sunIcons = document.querySelectorAll('.icon-sun');
+  const moonIcons = document.querySelectorAll('.icon-moon');
+  
+  sunIcons.forEach(icon => {
+    icon.style.display = isDark ? 'none' : 'block';
+  });
+  
+  moonIcons.forEach(icon => {
+    icon.style.display = isDark ? 'block' : 'none';
+  });
+}
+
+// Initialize dark mode on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupDarkModeToggle);
+} else {
+  setupDarkModeToggle();
+}

@@ -16,78 +16,176 @@
   <div class="app-container">
     <!-- Upload Area -->
     <div id="uploadArea" class="upload-area">
-  <div class="upload-content">
-    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-1"></path>
-      <polyline points="9 15 12 12 15 15"></polyline>
-      <line x1="12" y1="12" x2="12" y2="21"></line>
-    </svg>
-    <h2>Carica il tuo PDF</h2>
-    <p>Trascina qui il file PDF o clicca per selezionarlo</p>
-    <button class="btn btn-primary" id="uploadBtnMain">📁 Carica PDF</button>
-    <input type="file" id="pdfFileInputMain" accept="application/pdf" hidden>
+      <div class="upload-wrapper">
+        <div class="upload-content upload-area-modern">
+          <div class="upload-gradient-border">
+            <div class="upload-inner">
+              <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-1"></path>
+                <polyline points="9 15 12 12 15 15"></polyline>
+                <line x1="12" y1="12" x2="12" y2="21"></line>
+              </svg>
+              <h1 class="upload-title">Modifica i tuoi PDF in modo <span class="text-primary">Professionale</span></h1>
+              <p class="upload-subtitle">Carica, annota e firma i tuoi documenti in pochi secondi. Sicuro, veloce e completamente basato sul web.</p>
+              <button class="btn btn-primary btn-large" id="uploadBtnMain">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Carica PDF
+              </button>
+              <input type="file" id="pdfFileInputMain" accept="application/pdf" hidden>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<!-- TOOLBAR: Floating Glassmorphism -->
+<div id="toolbar" class="toolbar floating-glass" style="display: none;">
+  <div class="toolbar-section">
+    <button id="uploadBtn" class="btn btn-primary toolbar-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+      </svg>
+      Carica PDF
+    </button>
+    <input type="file" id="pdfFileInput" accept="application/pdf" hidden>
   </div>
-</div>
-<!-- TOOLBAR: nuova struttura -->
-<div id="toolbar" class="toolbar" style="display: none;">
-  <button id="uploadBtn" class="btn btn-primary">📁 Carica PDF</button>
-  <input type="file" id="pdfFileInput" accept="application/pdf" hidden>
 
-  <div class="separator"></div>
+  <div class="toolbar-divider"></div>
 
-  <button id="selectTool" class="btn">👆 Seleziona</button>
-  <button id="textTool" class="btn">T Testo</button>
-  <button id="imageTool" class="btn">🖼️ Immagine</button>
-  <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+  <div class="toolbar-section tools-group">
+    <button id="selectTool" class="btn toolbar-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+      </svg>
+      Seleziona
+    </button>
+    <button id="textTool" class="btn toolbar-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <polyline points="4 7 4 4 20 4 20 7"></polyline>
+        <line x1="9" y1="20" x2="15" y2="20"></line>
+        <line x1="12" y1="4" x2="12" y2="20"></line>
+      </svg>
+      Testo
+    </button>
+    <button id="imageTool" class="btn toolbar-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      Immagine
+    </button>
+    <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
 
-  <button id="signatureTool" class="btn">✍️ Firma</button>
-  <input type="file" id="signatureFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+    <button id="signatureTool" class="btn toolbar-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+        <path d="M2 2l7.586 7.586"></path>
+        <circle cx="11" cy="11" r="2"></circle>
+      </svg>
+      Firma
+    </button>
+    <input type="file" id="signatureFileInput" accept="image/png,image/jpeg,image/jpg" hidden>
+  </div>
 
-  <div class="separator"></div>
+  <div class="toolbar-divider"></div>
+
   <!-- Proprietà testo (hidden inizialmente) -->
-  <div id="textProperties" style="display: flex; gap: 8px; align-items: center;">
-    <select id="fontFamily">
+  <div id="textProperties" class="toolbar-text-props" style="display: none;">
+    <select id="fontFamily" class="toolbar-select">
       <option value="Arial">Arial</option>
       <option value="Helvetica">Helvetica</option>
       <option value="Times New Roman">Times New Roman</option>
       <option value="Courier">Courier</option>
       <option value="Verdana">Verdana</option>
     </select>
-    <input type="number" id="fontSize" min="8" max="72" value="16" placeholder="Dimensione">
-    <input type="color" id="fontColor" value="#000000" title="Colore">
-    <button id="boldBtn" class="btn">B</button>
-    <button id="italicBtn" class="btn">I</button>
-    <button id="underlineBtn" class="btn">U</button>
+    <input type="number" id="fontSize" class="toolbar-input" min="8" max="72" value="16" placeholder="Size">
+    <input type="color" id="fontColor" class="toolbar-color" value="#000000" title="Colore">
+    <div class="toolbar-format-btns">
+      <button id="boldBtn" class="btn toolbar-format-btn" title="Grassetto">B</button>
+      <button id="italicBtn" class="btn toolbar-format-btn" title="Corsivo">I</button>
+      <button id="underlineBtn" class="btn toolbar-format-btn" title="Sottolineato">U</button>
+    </div>
   </div>
 
-  <div class="separator"></div>
+  <div class="toolbar-divider" id="textPropsDivider" style="display: none;"></div>
 
-  <button id="copyBtn" class="btn" title="Copia (Ctrl+C)">📋 Copia</button>
-  <button id="cutBtn" class="btn" title="Taglia (Ctrl+X)">✂️ Taglia</button>
-  <button id="pasteBtn" class="btn" title="Incolla (Ctrl+V)">📄 Incolla</button>
+  <div class="toolbar-section actions-group">
+    <button id="copyBtn" class="btn toolbar-btn" title="Copia (Ctrl+C)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+    </button>
+    <button id="cutBtn" class="btn toolbar-btn" title="Taglia (Ctrl+X)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <circle cx="6" cy="6" r="3"></circle>
+        <circle cx="6" cy="18" r="3"></circle>
+        <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+        <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+        <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+      </svg>
+    </button>
+    <button id="pasteBtn" class="btn toolbar-btn" title="Incolla (Ctrl+V)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+      </svg>
+    </button>
+    <button id="deleteBtn" class="btn toolbar-btn" style="display: none;" title="Elimina">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    </button>
+  </div>
 
-  <div class="separator"></div>
+  <div class="toolbar-divider"></div>
 
-  <button id="deleteBtn" class="btn" style="display: none;">🗑️</button>
-
-  <div class="separator"></div>
-
-  <button id="exportBtn" class="btn btn-primary">💾 Esporta PDF</button>
+  <div class="toolbar-section export-group">
+    <button id="exportBtn" class="btn btn-primary toolbar-btn export-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Esporta PDF
+    </button>
+  </div>
 </div>
 
-    <!-- Pagination -->
-    <div id="pagination" class="pagination" style="display: none;">
-      <button id="prevPage" class="btn btn-secondary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
-      <span id="pageInfo" class="page-info">Pagina 1 di 1</span>
-      <button id="nextPage" class="btn btn-secondary">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
+    <!-- Pagination - Floating Glassmorphism -->
+    <div id="pagination" class="pagination floating-glass" style="display: none;">
+      <div class="pagination-nav">
+        <button id="prevPage" class="btn pagination-btn" title="Pagina precedente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <span id="pageInfo" class="page-info">Pagina 1 di 1</span>
+        <button id="nextPage" class="btn pagination-btn" title="Pagina successiva">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      <div class="pagination-divider"></div>
+      <div class="pagination-zoom">
+        <button id="zoomOut" class="btn pagination-btn" title="Zoom out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <span id="zoomLevel" class="zoom-info">100%</span>
+        <button id="zoomIn" class="btn pagination-btn" title="Zoom in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Canvas Container -->
@@ -121,6 +219,24 @@
       </div>
     </div>
   </div>
+
+  <!-- Dark Mode Toggle Button -->
+  <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </button>
 
   <script src="app.js"></script>
 </body>
