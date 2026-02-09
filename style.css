@@ -1993,11 +1993,58 @@ body {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
 }
 
-/* Dark mode styles for upload area */
-[data-color-scheme="dark"] .upload-inner {
-  background: rgba(55, 55, 65, 0.9);
+/* ============================================
+   UPLOAD AREA - MATCH TOOLBAR COLORS
+   ============================================ */
+
+/* Light mode - same as toolbar floating-glass */
+[data-color-scheme="light"] .upload-inner {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-[data-color-scheme="dark"] .upload-gradient-border {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+[data-color-scheme="light"] .upload-title {
+  color: #1f2937;
+}
+
+[data-color-scheme="light"] .upload-subtitle {
+  color: #4b5563;
+}
+
+[data-color-scheme="light"] .upload-icon {
+  color: var(--color-primary);
+  stroke: var(--color-primary);
+}
+
+[data-color-scheme="light"] .upload-area-modern:hover .upload-inner {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode - same as toolbar floating-glass */
+[data-color-scheme="dark"] .upload-inner {
+  background: rgba(55, 55, 65, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+[data-color-scheme="dark"] .upload-title {
+  color: #ffffff;
+}
+
+[data-color-scheme="dark"] .upload-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+[data-color-scheme="dark"] .upload-icon {
+  color: var(--color-primary);
+  stroke: var(--color-primary);
+}
+
+[data-color-scheme="dark"] .upload-area-modern:hover .upload-inner {
+  background: rgba(65, 65, 75, 0.98);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
 }
