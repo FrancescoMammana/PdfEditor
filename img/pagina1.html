@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="it"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PDF Editor - Modern Document Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#2563eb",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#121212",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .drop-zone-animate:hover {
+            border-color: #2563eb;
+            background-color: rgba(37, 99, 235, 0.03);
+            transform: translateY(-2px);
+        }
+        .glass-nav {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col">
+<nav class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 glass-nav">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16">
+<div class="flex items-center gap-2">
+<div class="bg-primary p-1.5 rounded-lg">
+<span class="material-symbols-outlined text-white text-2xl">picture_as_pdf</span>
+</div>
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">PDF<span class="text-primary">Flow</span></span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors" href="#">Features</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors" href="#">Security</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors" href="#">FAQ</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-sm font-semibold text-slate-700 dark:text-slate-300 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">Accedi</button>
+<button class="bg-primary text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-700 shadow-lg shadow-primary/20 transition-all">Inizia Ora</button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">dark_mode</span>
+</button>
+</div>
+</div>
+</div>
+</nav>
+<main class="flex-grow flex flex-col items-center justify-center px-4 py-12">
+<div class="max-w-4xl w-full text-center mb-12">
+<h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
+                Modifica i tuoi PDF in modo <span class="text-primary">Professionale</span>
+</h1>
+<p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                Carica, annota e firma i tuoi documenti in pochi secondi. Sicuro, veloce e completamente basato sul web.
+            </p>
+</div>
+<div class="w-full max-w-2xl">
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-r from-primary to-blue-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+<div class="relative bg-white dark:bg-slate-900/90 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 flex flex-col items-center justify-center transition-all duration-300 drop-zone-animate">
+<div class="mb-6">
+<div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-5xl text-primary animate-pulse">cloud_upload</span>
+</div>
+</div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Carica il tuo PDF</h2>
+<p class="text-slate-500 dark:text-slate-400 mb-8 text-center max-w-xs">
+                        Trascina qui il file PDF o clicca per selezionarlo dal tuo dispositivo
+                    </p>
+<button class="flex items-center gap-2 bg-primary hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-xl shadow-xl shadow-primary/25 transition-all active:scale-95">
+<span class="material-symbols-outlined">folder_open</span>
+                        Carica PDF
+                    </button>
+<p class="mt-6 text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
+                        Nessun limite di dimensione • 100% Sicuro
+                    </p>
+</div>
+</div>
+<div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+<div class="flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">lock</span>
+<span class="text-xs font-semibold">SSL SECURE</span>
+</div>
+<div class="flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+<span class="text-xs font-semibold">GDPR COMPLIANT</span>
+</div>
+<div class="flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">cloud_done</span>
+<span class="text-xs font-semibold">CLOUD SYNC</span>
+</div>
+<div class="flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">history</span>
+<span class="text-xs font-semibold">AUTO SAVE</span>
+</div>
+</div>
+</div>
+</main>
+<footer class="w-full py-8 border-t border-slate-200 dark:border-slate-800 mt-auto">
+<div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-sm text-slate-500 dark:text-slate-500">
+                © 2024 PDF 编辑器. Tutti i diritti riservati.
+            </p>
+<div class="flex gap-6">
+<a class="text-xs font-medium text-slate-500 hover:text-primary transition-colors" href="#">Termini di Servizio</a>
+<a class="text-xs font-medium text-slate-500 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-xs font-medium text-slate-500 hover:text-primary transition-colors" href="#">Contatti</a>
+</div>
+</div>
+</footer>
+<script>
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+</body></html>

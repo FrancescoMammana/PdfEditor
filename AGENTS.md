@@ -5,6 +5,7 @@
 3. **NO BUILD TOOLS**: No webpack, babel, npm scripts
 4. **FUNZIONI SEMPLICI**: Una funzione = una responsabilità, nomi descrittivi
 5. **ASYNC/AWAIT**: Sempre, mai callback annidati
+6. **RIUTILIZZO CODICE ESISTENTE**: L'implementazione deve sempre basarsi sull'aggiunta di meno codice possibile, riutilizzando funzioni e pattern già presenti. Evita ripetizioni e duplicazioni. Cerca soluzioni che estendano il codice esistente invece di riscriverlo.
 
 ## CONTENUTO PROGETTO
 
@@ -96,13 +97,33 @@ function validateFeatureFile(file) {
         return false;
     }
     
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size >5 * 1024 * 1024) {
         showToast('File troppo grande (max 5MB)');
         return false;
     }
     
     return true;
 }
+```
+
+## ESEMPIO: RIUTILIZZO CODICE ESISTENTE
+
+```javascript
+// ❌ SBAGLIATO: duplica logica esistente
+function handleSelectionChanged() {
+    currentTool = 'select';
+    selectTool.classList.add('active');
+    textTool.classList.remove('active');
+    imageTool.classList.remove('active');
+    fabricCanvas.selection = true;
+    fabricCanvas.defaultCursor = 'default';
+}
+
+// ✅ CORRETTO: riutilizza funzione esistente (2 righe)
+fabricCanvas.on('editing:exited', () => {
+    currentTool = 'select';
+    updateToolButtons();
+});
 ```
 
 ## GESTIONE STATO
@@ -141,6 +162,8 @@ Dopo ogni modifica, verifica:
 - [ ] Nessun framework aggiunto?
 - [ ] Validazione con early return?
 - [ ] Nessun commento superfluo?
+- [ ] Riutilizzato codice esistente invece di duplicare?
+- [ ] Aggiunto il minor numero di righe possibile?
 
 ## COMANDI
 
