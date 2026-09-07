@@ -21,6 +21,9 @@ let fontFamily, fontSize, fontColor, boldBtn, italicBtn, underlineBtn;
 let uploadBtnMain, pdfFileInputMain, uploadBtn;
 let copyBtn, cutBtn, pasteBtn;
 let clipboard = null; // Oggetto in clipboard per copia/incolla
+let undoStack = [];
+let redoStack = [];
+let undoTextState = null;
 
 // Signature tool elements
 let signatureTool, signatureFileInput, signaturePanel;
@@ -37,6 +40,54 @@ function showToast(message, type = 'info') {
   setTimeout(() => {
     toast.classList.remove('show');
   }, 3000);
+}
+
+function pushAction(action) {
+  undoStack.push(action);
+  redoStack = [];
+  if (undoStack.length > 5) {
+    undoStack.shift();
+  }
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  const action = undoStack.pop();
+  redoStack.push(action);
+
+  if (action.type === 'add') {
+    fabricCanvas.remove(action.object);
+  } else if (action.type === 'delete') {
+    fabricCanvas.add(action.object);
+  } else if (action.type === 'modify') {
+    action.object.set(action.prev);
+    action.object.setCoords();
+  }
+
+  fabricCanvas.discardActiveObject();
+  fabricCanvas.renderAll();
+  handleSelectionCleared();
+  showToast('Azione annullata', 'info');
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  const action = redoStack.pop();
+  undoStack.push(action);
+
+  if (action.type === 'add') {
+    fabricCanvas.add(action.object);
+  } else if (action.type === 'delete') {
+    fabricCanvas.remove(action.object);
+  } else if (action.type === 'modify') {
+    action.object.set(action.next);
+    action.object.setCoords();
+  }
+
+  fabricCanvas.discardActiveObject();
+  fabricCanvas.renderAll();
+  handleSelectionCleared();
+  showToast('Azione ripristinata', 'info');
 }
 
 // Initialize app after DOM loads
@@ -574,6 +625,9 @@ async function renderPage(pageNum) {
       fabricCanvas.on('selection:updated', handleSelection);
       fabricCanvas.on('selection:cleared', handleSelectionCleared);
       fabricCanvas.on('mouse:down', handleCanvasClick);
+      fabricCanvas.on('object:modified', handleObjectModified);
+      fabricCanvas.on('editing:entered', handleEditingEntered);
+      fabricCanvas.on('editing:exited', handleEditingExited);
       // fabricCanvas.on('touch:touch', handleCanvasClick);
     } else {
       fabricCanvas.setWidth(viewport.width);
@@ -730,6 +784,7 @@ function handleCanvasClick(event) {
       editable: true
     });
     fabricCanvas.add(textbox);
+    pushAction({ type: 'add', object: textbox });
     fabricCanvas.setActiveObject(textbox);
     textbox.enterEditing();
     textbox.selectAll();
@@ -829,12 +884,57 @@ function handleSelectionCleared() {
   if (cutBtn) cutBtn.disabled = true;
 }
 
+function handleObjectModified(e) {
+  const obj = e.target;
+  const original = e.transform.original;
+  pushAction({
+    type: 'modify',
+    object: obj,
+    prev: { left: original.left, top: original.top, scaleX: original.scaleX, scaleY: original.scaleY, angle: original.angle },
+    next: { left: obj.left, top: obj.top, scaleX: obj.scaleX, scaleY: obj.scaleY, angle: obj.angle }
+  });
+}
+
+function handleEditingEntered(e) {
+  const obj = e.target;
+  if (obj.type !== 'textbox') return;
+  undoTextState = {
+    text: obj.text,
+    fontFamily: obj.fontFamily,
+    fontSize: obj.fontSize,
+    fill: obj.fill,
+    fontWeight: obj.fontWeight,
+    fontStyle: obj.fontStyle,
+    underline: obj.underline
+  };
+}
+
+function handleEditingExited(e) {
+  if (!undoTextState) return;
+  const obj = e.target;
+  if (obj.type !== 'textbox') return;
+  const next = {
+    text: obj.text,
+    fontFamily: obj.fontFamily,
+    fontSize: obj.fontSize,
+    fill: obj.fill,
+    fontWeight: obj.fontWeight,
+    fontStyle: obj.fontStyle,
+    underline: obj.underline
+  };
+  if (JSON.stringify(undoTextState) !== JSON.stringify(next)) {
+    pushAction({ type: 'modify', object: obj, prev: undoTextState, next: next });
+  }
+  undoTextState = null;
+}
+
 // Cancella l'oggetto selezionato
 function deleteSelectedObject() {
   if (!fabricCanvas) return;
   
   const activeObject = fabricCanvas.getActiveObject();
   if (activeObject) {
+    pushAction({ type: 'delete', object: activeObject });
     fabricCanvas.remove(activeObject);
     fabricCanvas.discardActiveObject();
     fabricCanvas.renderAll();
@@ -1057,8 +1157,13 @@ function handleKeyboardShortcuts(e) {
   } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
     e.preventDefault();
     pasteObject();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault();
+    undo();
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+    e.preventDefault();
+    redo();
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
-    // Cancella oggetto selezionato con tasto Canc o Backspace
     e.preventDefault();
     deleteSelectedObject();
   }
@@ -1290,6 +1395,7 @@ function insertSignatureOnCanvas(dataUrl) {
       top: 100
     });
     fabricCanvas.add(img);
+    pushAction({ type: 'add', object: img });
     fabricCanvas.setActiveObject(img);
     fabricCanvas.renderAll();
   });
