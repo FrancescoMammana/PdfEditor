@@ -48,10 +48,31 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+function setupHistoryButtons() {
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
+  updateHistoryControls();
+}
+
+function updateHistoryControls() {
+  const undoButton = document.getElementById?.('undoBtn');
+  const redoButton = document.getElementById?.('redoBtn');
+  if (!undoButton || !redoButton) return;
+  const editing = fabricCanvas?.getActiveObject()?.isEditing;
+  undoButton.disabled = undoStack.length === 0 && !editing;
+  redoButton.disabled = redoStack.length === 0 || editing === true;
+}
+
+function finishTextEditing() {
+  const object = fabricCanvas?.getActiveObject();
+  if (object?.isEditing) object.exitEditing();
+}
+
 function resetHistory() {
   undoStack = [];
   redoStack = [];
   undoTextState = null;
+  updateHistoryControls();
 }
 
 function pushAction(action) {
@@ -60,13 +81,14 @@ function pushAction(action) {
   if (undoStack.length > 5) {
     undoStack.shift();
   }
+  updateHistoryControls();
 }
 
 function undo() {
+  finishTextEditing();
   if (undoStack.length === 0) return;
   const action = undoStack.pop();
   redoStack.push(action);
-
   if (action.type === 'add') {
     fabricCanvas.remove(action.object);
   } else if (action.type === 'delete') {
@@ -75,18 +97,18 @@ function undo() {
     action.object.set(action.prev);
     action.object.setCoords();
   }
-
   fabricCanvas.discardActiveObject();
   fabricCanvas.renderAll();
   handleSelectionCleared();
+  updateHistoryControls();
   showToast('Azione annullata', 'info');
 }
 
 function redo() {
+  finishTextEditing();
   if (redoStack.length === 0) return;
   const action = redoStack.pop();
   undoStack.push(action);
-
   if (action.type === 'add') {
     fabricCanvas.add(action.object);
   } else if (action.type === 'delete') {
@@ -95,10 +117,10 @@ function redo() {
     action.object.set(action.next);
     action.object.setCoords();
   }
-
   fabricCanvas.discardActiveObject();
   fabricCanvas.renderAll();
   handleSelectionCleared();
+  updateHistoryControls();
   showToast('Azione ripristinata', 'info');
 }
 
@@ -177,6 +199,7 @@ function initializeApp() {
   // Setup all event listeners
   setupUploadListeners();
   setupToolListeners();
+  setupHistoryButtons();
   setupTextListeners();
   setupPaginationListeners();
   setupZoomListeners();
@@ -937,6 +960,7 @@ function handleEditingEntered(e) {
     fontStyle: obj.fontStyle,
     underline: obj.underline
   };
+  updateHistoryControls();
 }
 
 function handleEditingExited(e) {
@@ -956,6 +980,7 @@ function handleEditingExited(e) {
     pushAction({ type: 'modify', object: obj, prev: undoTextState, next: next });
   }
   undoTextState = null;
+  updateHistoryControls();
 }
 
 // Cancella l'oggetto selezionato

@@ -298,3 +298,35 @@ test('exported annotations retain their PDF coordinates at different zoom levels
     }
   }
 });
+
+test('history buttons follow undo, redo and page changes', async function () {
+  assert.equal(await page.isDisabled('#undoBtn'), true);
+  assert.equal(await page.isDisabled('#redoBtn'), true);
+  await addText();
+  assert.equal(await page.isDisabled('#undoBtn'), false);
+  await page.click('#undoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 0);
+  assert.equal(await page.isDisabled('#undoBtn'), true);
+  assert.equal(await page.isDisabled('#redoBtn'), false);
+  await page.click('#redoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 1);
+  assert.equal(await page.isDisabled('#redoBtn'), true);
+  await page.click('#nextPage');
+  await page.waitForFunction(function () { return currentPage === 2 && fabricCanvas.getObjects().length === 0; });
+  assert.equal(await page.isDisabled('#undoBtn'), true);
+  assert.equal(await page.isDisabled('#redoBtn'), true);
+});
+
+test('history buttons finish a text edit before undoing it', async function () {
+  await addText();
+  await page.evaluate(function () {
+    const object = fabricCanvas.getActiveObject();
+    object.enterEditing();
+    object.selectAll();
+  });
+  await page.keyboard.type('Modificato');
+  await page.click('#undoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects()[0].text; }), 'Testo');
+  await page.click('#redoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects()[0].text; }), 'Modificato');
+});
