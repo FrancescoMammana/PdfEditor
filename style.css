@@ -1004,8 +1004,8 @@ body {
 .canvas-container {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   padding: var(--space-24);
   overflow-y: auto;
   min-width: 0; /* Prevent overflow issues */
@@ -1020,7 +1020,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 900px;
+  flex-shrink: 0;
+  margin: auto;
   width: 100%;
 }
 
@@ -1103,12 +1104,6 @@ body {
   color: white;
 }
 
-@media (max-width: 1024px) {
-  .canvas-wrapper {
-    max-width: 90vw;
-  }
-}
-
 @media (max-width: 768px) {
   .toolbar {
     padding: var(--space-12);
@@ -1118,7 +1113,6 @@ body {
     padding: var(--space-12);
   }
   .canvas-wrapper {
-    max-width: 95vw;
     width: 100%;
   }
   .pagination {
@@ -1140,7 +1134,6 @@ body {
     padding: var(--space-4);
   }
   .canvas-wrapper {
-    max-width: 98vw;
     width: 100%;
   }
   .pagination {
