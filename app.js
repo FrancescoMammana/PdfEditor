@@ -12,6 +12,8 @@ let pageAnnotations = {}; // Store annotations per page
 let annotationScales = {};
 let pageOverlays = {};
 let renderedScale = 1.5;
+let zoomPercent = 100;
+let zoomRendering = false;
 let originalFilename = ''; // Nome del file PDF originale caricato
 
 
@@ -24,6 +26,7 @@ let fontFamily, fontSize, fontColor, boldBtn, italicBtn, underlineBtn;
 let uploadBtnMain, pdfFileInputMain, uploadBtn;
 let copyBtn, cutBtn, pasteBtn;
 let clipboard = null; // Oggetto in clipboard per copia/incolla
+let clipboardScale = 1.5;
 let undoStack = [];
 let redoStack = [];
 let undoTextState = null;
@@ -176,6 +179,7 @@ function initializeApp() {
   setupToolListeners();
   setupTextListeners();
   setupPaginationListeners();
+  setupZoomListeners();
   setupSignatureListeners();
   setupExportDialogListeners();
   
@@ -546,10 +550,13 @@ async function loadPDFFile(file) {
     
     // Load with PDF.js
     //console.log('Loading with PDF.js...');
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBytes) });
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(pdfBytes), isEvalSupported: false
+    });
     pdfDoc = await loadingTask.promise;
     totalPages = pdfDoc.numPages;
     currentPage = 1;
+    zoomPercent = 100;
     
     //console.log('PDF loaded successfully:', totalPages, 'pages');
     
@@ -581,77 +588,132 @@ async function loadPDFFile(file) {
   }
 }
 
-// Render PDF page
-async function renderPage(pageNum) {
-  // Responsività: determina larghezza massima canvas-container
+function setupZoomListeners() {
+  document.getElementById('zoomIn').addEventListener('click', async function () {
+    await changeZoom(25);
+  });
+  document.getElementById('zoomOut').addEventListener('click', async function () {
+    await changeZoom(-25);
+  });
+}
+
+function updateZoomControls() {
+  document.getElementById('zoomLevel').textContent = `${zoomPercent}%`;
+  document.getElementById('zoomIn').disabled = zoomRendering || zoomPercent >= 300;
+  document.getElementById('zoomOut').disabled = zoomRendering || zoomPercent <= 25;
+}
+
+async function changeZoom(amount) {
+  if (!pdfDoc || !fabricCanvas || zoomRendering) return;
+  const nextZoom = Math.max(25, Math.min(300, zoomPercent + amount));
+  if (nextZoom === zoomPercent) return;
+  zoomRendering = true;
+  updateZoomControls();
+  try {
+    savePageAnnotations();
+    zoomPercent = nextZoom;
+    await renderPage(currentPage, true);
+  } finally {
+    zoomRendering = false;
+    updateZoomControls();
+  }
+}
+
+function handleZoomShortcut(event) {
+  if (!pdfDoc || !(event.ctrlKey || event.metaKey)) return false;
+  if (!['+', '=', '-'].includes(event.key)) return false;
+  event.preventDefault();
+  let amount = 25;
+  if (event.key === '-') amount = -25;
+  changeZoom(amount);
+  return true;
+}
+
+function getPageViewport(page) {
   let containerMaxWidth = 900;
   if (window.innerWidth < 480) containerMaxWidth = window.innerWidth * 0.98;
   else if (window.innerWidth < 768) containerMaxWidth = window.innerWidth * 0.95;
   else if (window.innerWidth < 1024) containerMaxWidth = window.innerWidth * 0.9;
-  else containerMaxWidth = 900;
+  const viewport = page.getViewport({ scale: 1 });
+  const scale = Math.min(1.5, containerMaxWidth / viewport.width);
+  return page.getViewport({ scale: scale * zoomPercent / 100 });
+}
 
+function resizePageCanvases(viewport) {
+  pdfCanvas.width = viewport.width;
+  pdfCanvas.height = viewport.height;
+  pdfCanvas.style.width = viewport.width + 'px';
+  pdfCanvas.style.height = viewport.height + 'px';
+  fabricCanvasEl.width = viewport.width;
+  fabricCanvasEl.height = viewport.height;
+  fabricCanvasEl.style.width = viewport.width + 'px';
+  fabricCanvasEl.style.height = viewport.height + 'px';
+  const wrapper = document.querySelector('.canvas-wrapper');
+  wrapper.style.aspectRatio = (viewport.width / viewport.height).toFixed(6);
+  wrapper.style.width = viewport.width + 'px';
+  wrapper.style.height = viewport.height + 'px';
+}
+
+function initializeFabricCanvas(viewport) {
+  if (fabricCanvas) {
+    fabricCanvas.setWidth(viewport.width);
+    fabricCanvas.setHeight(viewport.height);
+    fabricCanvas.calcOffset();
+    return;
+  }
+  fabricCanvas = new fabric.Canvas('fabricCanvas', {
+    width: viewport.width,
+    height: viewport.height,
+    selection: true,
+    preserveObjectStacking: true
+  });
+  fabricCanvas.on('selection:created', handleSelection);
+  fabricCanvas.on('selection:updated', handleSelection);
+  fabricCanvas.on('selection:cleared', handleSelectionCleared);
+  fabricCanvas.on('mouse:down', handleCanvasClick);
+  fabricCanvas.on('object:modified', handleObjectModified);
+  fabricCanvas.on('text:editing:entered', handleEditingEntered);
+  fabricCanvas.on('text:editing:exited', handleEditingExited);
+}
+
+function scaleHistoryGeometry(state, ratio) {
+  for (const key of ['left', 'top', 'scaleX', 'scaleY']) {
+    if (Number.isFinite(state[key])) state[key] *= ratio;
+  }
+}
+
+function scalePageObjects(scale) {
+  const ratio = scale / renderedScale;
+  const objects = new Set(fabricCanvas.getObjects());
+  for (const action of [...undoStack, ...redoStack]) {
+    objects.add(action.object);
+    if (action.type !== 'modify') continue;
+    scaleHistoryGeometry(action.prev, ratio);
+    scaleHistoryGeometry(action.next, ratio);
+  }
+  for (const object of objects) {
+    object.set({
+      left: object.left * ratio, top: object.top * ratio,
+      scaleX: object.scaleX * ratio, scaleY: object.scaleY * ratio
+    });
+    object.setCoords();
+  }
+  renderedScale = scale;
+  fabricCanvas.renderAll();
+}
+
+async function renderPage(pageNum, preserveObjects = false) {
   try {
     const page = await pdfDoc.getPage(pageNum);
-    const unscaledV = page.getViewport({ scale: 1 });
-    const aspect = unscaledV.width / unscaledV.height;
-    let scale = 1.5;
-    let width = unscaledV.width * scale;
-    let height = unscaledV.height * scale;
-    
-    if (width > containerMaxWidth) {
-      scale = containerMaxWidth / unscaledV.width;
-      width = containerMaxWidth;
-      height = width / aspect;
-    }
-    
-    const viewport = page.getViewport({ scale });
-    
-    pdfCanvas.width = viewport.width;
-    pdfCanvas.height = viewport.height;
-    pdfCanvas.style.width = width + 'px';
-    pdfCanvas.style.height = height + 'px';
-    
-    fabricCanvasEl.width = viewport.width;
-    fabricCanvasEl.height = viewport.height;
-    fabricCanvasEl.style.width = width + 'px';
-    fabricCanvasEl.style.height = height + 'px';
-
-    const wrapper = document.querySelector('.canvas-wrapper');
-    wrapper.style.aspectRatio = (viewport.width / viewport.height).toFixed(6);
-    wrapper.style.width = width + 'px';
-    wrapper.style.height = height + 'px';
-
-    const ctx = pdfCanvas.getContext('2d');
+    const viewport = getPageViewport(page);
+    resizePageCanvases(viewport);
     await page.render({
-      canvasContext: ctx,
-      viewport: viewport
+      canvasContext: pdfCanvas.getContext('2d'), viewport: viewport
     }).promise;
-
-    if (!fabricCanvas) {
-      fabricCanvas = new fabric.Canvas('fabricCanvas', {
-        width: viewport.width,
-        height: viewport.height,
-        selection: true,
-        preserveObjectStacking: true
-      });
-      fabricCanvas.on('selection:created', handleSelection);
-      fabricCanvas.on('selection:updated', handleSelection);
-      fabricCanvas.on('selection:cleared', handleSelectionCleared);
-      fabricCanvas.on('mouse:down', handleCanvasClick);
-      fabricCanvas.on('object:modified', handleObjectModified);
-      fabricCanvas.on('text:editing:entered', handleEditingEntered);
-      fabricCanvas.on('text:editing:exited', handleEditingExited);
-      // fabricCanvas.on('touch:touch', handleCanvasClick);
-    } else {
-      fabricCanvas.setWidth(viewport.width);
-      fabricCanvas.setHeight(viewport.height);
-      fabricCanvas.calcOffset();
-    }
-    
-    await loadPageAnnotations(pageNum, scale);
-    
-    // Setup mobile text editing if needed
-    // setupMobileTextEditing();
+    initializeFabricCanvas(viewport);
+    if (preserveObjects) scalePageObjects(viewport.scale);
+    else await loadPageAnnotations(pageNum, viewport.scale);
+    updateZoomControls();
   } catch (error) {
     console.error('Errore rendering pagina:', error);
     showToast('Errore nel rendering della pagina', 'error');
@@ -972,6 +1034,7 @@ function downloadPDF(bytes, filename) {
 
 // Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V, Delete)
 function handleKeyboardShortcuts(e) {
+  if (handleZoomShortcut(e)) return;
   const target = e.target;
   if (target && (target.isContentEditable || target.closest?.('input, textarea, select'))) return;
   if (fabricCanvas && fabricCanvas.getActiveObject()?.isEditing) return;
@@ -993,127 +1056,59 @@ function handleKeyboardShortcuts(e) {
 // Copia l'oggetto selezionato
 function copySelectedObject() {
   if (!fabricCanvas) return;
-  
-  const activeObject = fabricCanvas.getActiveObject();
-  if (!activeObject) {
+  const object = fabricCanvas.getActiveObject();
+  if (!object) {
     showToast('Seleziona un oggetto da copiare', 'info');
     return;
   }
-
-  // Crea una copia profonda dei dati dell'oggetto
-  if (activeObject.type === 'textbox') {
+  if (object.type === 'textbox') {
     clipboard = {
-      type: 'text',
-      text: activeObject.text,
-      fontFamily: activeObject.fontFamily,
-      fontSize: activeObject.fontSize,
-      fill: activeObject.fill,
-      fontWeight: activeObject.fontWeight,
-      fontStyle: activeObject.fontStyle,
-      underline: activeObject.underline,
-      width: activeObject.width,
-      scaleX: activeObject.scaleX,
-      scaleY: activeObject.scaleY,
-      angle: activeObject.angle || 0
+      type: 'text', text: object.text, left: object.left, top: object.top,
+      fontFamily: object.fontFamily, fontSize: object.fontSize, fill: object.fill,
+      fontWeight: object.fontWeight, fontStyle: object.fontStyle,
+      underline: object.underline, width: object.width,
+      scaleX: object.scaleX, scaleY: object.scaleY, angle: object.angle || 0
     };
-  } else if (activeObject.type === 'image') {
+  } else if (object.type === 'image') {
     clipboard = {
-      type: 'image',
-      src: activeObject.toDataURL(),
-      left: activeObject.left,
-      top: activeObject.top,
-      displayWidth: activeObject.width * activeObject.scaleX,
-      displayHeight: activeObject.height * activeObject.scaleY,
-      angle: activeObject.angle || 0
+      type: 'image', src: object.getSrc(), left: object.left, top: object.top,
+      displayWidth: object.width * object.scaleX,
+      displayHeight: object.height * object.scaleY, angle: object.angle || 0
     };
   }
-
+  if (object.type === 'textbox' || object.type === 'image') clipboardScale = renderedScale;
   showToast('Oggetto copiato!', 'success');
 }
 
-// Taglia l'oggetto selezionato (copia e rimuove)
 function cutSelectedObject() {
   if (!fabricCanvas) return;
-  
-  const activeObject = fabricCanvas.getActiveObject();
-  if (!activeObject) {
+  if (!fabricCanvas.getActiveObject()) {
     showToast('Seleziona un oggetto da tagliare', 'info');
     return;
   }
-
-  // Prima copia
   copySelectedObject();
-  
-  // Poi rimuovi
-  fabricCanvas.remove(activeObject);
-  fabricCanvas.discardActiveObject();
-  fabricCanvas.renderAll();
-  handleSelectionCleared();
-  
+  deleteSelectedObject();
   showToast('Oggetto tagliato!', 'success');
 }
 
-// Incolla l'oggetto dalla clipboard
-function pasteObject() {
+async function pasteObject() {
   if (!fabricCanvas) return;
-  
   if (!clipboard) {
     showToast('Nessun oggetto da incollare', 'info');
     return;
   }
-
-  // Offset per distinguere l'oggetto incollato dall'originale
-  const offset = 20;
-
-  if (clipboard.type === 'text') {
-    const textbox = new fabric.Textbox(clipboard.text, {
-      left: (clipboard.left || 100) + offset,
-      top: (clipboard.top || 100) + offset,
-      fontFamily: clipboard.fontFamily,
-      fontSize: clipboard.fontSize,
-      fill: clipboard.fill,
-      fontWeight: clipboard.fontWeight,
-      fontStyle: clipboard.fontStyle,
-      underline: clipboard.underline,
-      width: clipboard.width,
-      scaleX: clipboard.scaleX || 1,
-      scaleY: clipboard.scaleY || 1,
-      angle: clipboard.angle || 0,
-      editable: true
-    });
-    
-    fabricCanvas.add(textbox);
-    fabricCanvas.setActiveObject(textbox);
-    fabricCanvas.renderAll();
-    
-    // Aggiorna la posizione nella clipboard per il prossimo incolla
-    clipboard.left = (clipboard.left || 100) + offset;
-    clipboard.top = (clipboard.top || 100) + offset;
-    
-  } else if (clipboard.type === 'image') {
-    fabric.Image.fromURL(clipboard.src, (img) => {
-      // Usa displayWidth/displayHeight per calcolare lo scale corretto
-      const scaleX = clipboard.displayWidth / img.width;
-      const scaleY = clipboard.displayHeight / img.height;
-      
-      img.set({
-        left: (clipboard.left || 100) + offset,
-        top: (clipboard.top || 100) + offset,
-        scaleX: scaleX,
-        scaleY: scaleY,
-        angle: clipboard.angle || 0
-      });
-      
-      fabricCanvas.add(img);
-      fabricCanvas.setActiveObject(img);
-      fabricCanvas.renderAll();
-      
-      // Aggiorna la posizione nella clipboard per il prossimo incolla
-      clipboard.left = (clipboard.left || 100) + offset;
-      clipboard.top = (clipboard.top || 100) + offset;
-    });
-  }
-
+  const source = clipboard;
+  const ratio = renderedScale / clipboardScale;
+  const annotation = {
+    ...source, left: (source.left ?? 100) + 20 / ratio, top: (source.top ?? 100) + 20 / ratio
+  };
+  const object = await createAnnotationObject(annotation, ratio);
+  fabricCanvas.add(object);
+  pushAction({ type: 'add', object: object });
+  fabricCanvas.setActiveObject(object);
+  fabricCanvas.renderAll();
+  source.left = annotation.left;
+  source.top = annotation.top;
   showToast('Oggetto incollato!', 'success');
 }
 // Setup signature tool listeners
@@ -1176,36 +1171,38 @@ function getSignatures() {
 function loadSignaturesList() {
   const signatures = getSignatures();
   signatureList.innerHTML = '';
-
   if (signatures.length === 0) {
-    signatureList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Nessuna firma salvata</div>';
+    signatureList.textContent = 'Nessuna firma salvata';
     return;
   }
+  for (const signature of signatures) {
+    signatureList.appendChild(createSignatureItem(signature));
+  }
+}
 
-  signatures.forEach(sig => {
-    const item = document.createElement('div');
-    item.className = 'signature-item';
-    item.innerHTML = `
-      <img src="${sig.data}" alt="${sig.name}">
-      <span>${sig.name}</span>
-      <button class="delete-sig" data-id="${sig.id}">🗑️</button>
-    `;
-
-    item.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('delete-sig')) {
-        insertSignatureOnCanvas(sig.data);
-        signaturePanel.style.display = 'none';
-      }
-    });
-
-    item.querySelector('.delete-sig').addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteSignature(sig.id);
-      loadSignaturesList();
-    });
-
-    signatureList.appendChild(item);
+function createSignatureItem(signature) {
+  const item = document.createElement('div');
+  item.className = 'signature-item';
+  const image = document.createElement('img');
+  image.src = signature.data;
+  image.alt = signature.name;
+  const name = document.createElement('span');
+  name.textContent = signature.name;
+  const button = document.createElement('button');
+  button.className = 'delete-sig';
+  button.dataset.id = signature.id;
+  button.textContent = '🗑️';
+  item.append(image, name, button);
+  item.addEventListener('click', function () {
+    insertSignatureOnCanvas(signature.data);
+    signaturePanel.style.display = 'none';
   });
+  button.addEventListener('click', function (event) {
+    event.stopPropagation();
+    deleteSignature(signature.id);
+    loadSignaturesList();
+  });
+  return item;
 }
 
 function insertSignatureOnCanvas(dataUrl) {
