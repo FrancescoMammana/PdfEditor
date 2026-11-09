@@ -335,10 +335,10 @@ function showExportDialog() {
   }
 
   // Calculate default filename based on original
-  let defaultName = 'documento_modificato.pdf';
+  let defaultName = 'documento_modificato';
   if (originalFilename) {
     const nameWithoutExt = originalFilename.replace(/\.pdf$/i, '');
-    defaultName = `${nameWithoutExt}_modificato.pdf`;
+    defaultName = `${nameWithoutExt}_modificato`;
   }
   
   console.log('Opening export dialog. originalFilename:', originalFilename, 'defaultName:', defaultName);
