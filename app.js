@@ -42,6 +42,12 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+function resetHistory() {
+  undoStack = [];
+  redoStack = [];
+  undoTextState = null;
+}
+
 function pushAction(action) {
   undoStack.push(action);
   redoStack = [];
@@ -442,6 +448,7 @@ function setupPaginationListeners() {
   prevPageBtn.addEventListener('click', () => {
     if (currentPage > 1) {
       savePageAnnotations();
+      resetHistory();
       currentPage--;
       renderPage(currentPage);
       updatePagination();
@@ -451,6 +458,7 @@ function setupPaginationListeners() {
   nextPageBtn.addEventListener('click', () => {
     if (currentPage < totalPages) {
       savePageAnnotations();
+      resetHistory();
       currentPage++;
       renderPage(currentPage);
       updatePagination();
@@ -626,8 +634,8 @@ async function renderPage(pageNum) {
       fabricCanvas.on('selection:cleared', handleSelectionCleared);
       fabricCanvas.on('mouse:down', handleCanvasClick);
       fabricCanvas.on('object:modified', handleObjectModified);
-      fabricCanvas.on('editing:entered', handleEditingEntered);
-      fabricCanvas.on('editing:exited', handleEditingExited);
+      fabricCanvas.on('text:editing:entered', handleEditingEntered);
+      fabricCanvas.on('text:editing:exited', handleEditingExited);
       // fabricCanvas.on('touch:touch', handleCanvasClick);
     } else {
       fabricCanvas.setWidth(viewport.width);
@@ -702,6 +710,7 @@ function savePageAnnotations() {
 
 // Load annotations for current page
 function loadPageAnnotations(pageNum) {
+  resetHistory();
   fabricCanvas.clear();
   
   const annotations = pageAnnotations[pageNum] || [];
@@ -772,51 +781,28 @@ function updateToolButtons() {
 
 // Canvas click handler
 function handleCanvasClick(event) {
-  if (currentTool === 'text' && !event.target) {
-    const pointer = fabricCanvas.getPointer(event.e);
-    const textbox = new fabric.Textbox('Digita qui...', {
-      left: pointer.x,
-      top: pointer.y,
-      fontFamily: 'Arial',
-      fontSize: 16,
-      fill: '#000000',
-      width: 200,
-      editable: true
-    });
-    fabricCanvas.add(textbox);
-    pushAction({ type: 'add', object: textbox });
-    fabricCanvas.setActiveObject(textbox);
-    textbox.enterEditing();
-    textbox.selectAll();
-
-    textbox.addEventListener('pointerdown', function (event) {
-      event.preventDefault();      // blocca il focus automatico sul pannello
-      event.stopPropagation();     // opzionale: non far salire l’evento
-    });
-    
-    // Non cambiare subito tool su mobile per permettere la digitazione
-    // const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    // if (!isMobile) {
-      // Switch back to select tool solo su desktop
-      currentTool = 'select';
-      updateToolButtons();
-      fabricCanvas.selection = true;
-      fabricCanvas.defaultCursor = 'default';
-    // }
-    
-    // // Previene il blur immediato su mobile
-    // if (isMobile) {
-      //  event.preventDefault();
-      //  event.stopPropagation();
-      
-    //   // Mantieni il focus sul campo di testo
-    //   setTimeout(() => {
-    //     textbox.enterEditing();
-    //     textbox.selectAll();
-    //   }, 100);
-    // }
-  }
+  if (currentTool !== 'text' || event.target) return;
+  const pointer = fabricCanvas.getPointer(event.e);
+  const textbox = new fabric.Textbox('Digita qui...', {
+    left: pointer.x,
+    top: pointer.y,
+    fontFamily: 'Arial',
+    fontSize: 16,
+    fill: '#000000',
+    width: 200,
+    editable: true
+  });
+  fabricCanvas.add(textbox);
+  pushAction({ type: 'add', object: textbox });
+  fabricCanvas.setActiveObject(textbox);
+  textbox.enterEditing();
+  textbox.selectAll();
+  currentTool = 'select';
+  updateToolButtons();
+  fabricCanvas.selection = true;
+  fabricCanvas.defaultCursor = 'default';
 }
+
 
 // Handle object selection
 function handleSelection(event) {
@@ -886,7 +872,8 @@ function handleSelectionCleared() {
 
 function handleObjectModified(e) {
   const obj = e.target;
-  const original = e.transform.original;
+  const original = e.transform?.original;
+  if (!original) return;
   pushAction({
     type: 'modify',
     object: obj,
