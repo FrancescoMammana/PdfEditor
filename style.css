@@ -1827,6 +1827,7 @@ body {
   }
   
   .toolbar-section.tools-group {
+    flex-wrap: wrap;
     order: 3;
     width: 100%;
     justify-content: center;
@@ -2040,4 +2041,30 @@ body {
 [data-color-scheme="dark"] .upload-area-modern:hover .upload-inner {
   background: rgba(65, 65, 75, 0.98);
   box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+}
+
+#signatureDrawDialog {
+  margin: auto;
+  width: 480px;
+  min-width: 0;
+  border: 1px solid #ccc;
+  color: inherit;
+}
+
+#signatureDrawDialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#signatureDrawDialog .export-dialog-buttons {
+  flex-wrap: wrap;
+}
+
+#signatureDrawing {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  background: white;
+  touch-action: none;
 }

@@ -34,6 +34,9 @@ let undoTextState = null;
 // Signature tool elements
 let signatureTool, signatureFileInput, signaturePanel;
 let closeSignaturePanel, signatureList, addSignatureBtn;
+let signatureDrawing = null;
+let signatureStroke = null;
+let signatureHasInk = false;
 
 // Export dialog elements
 let exportDialog, exportFilename, cancelExport, confirmExport;
@@ -48,10 +51,31 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+function setupHistoryButtons() {
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
+  updateHistoryControls();
+}
+
+function updateHistoryControls() {
+  const undoButton = document.getElementById?.('undoBtn');
+  const redoButton = document.getElementById?.('redoBtn');
+  if (!undoButton || !redoButton) return;
+  const editing = fabricCanvas?.getActiveObject()?.isEditing;
+  undoButton.disabled = undoStack.length === 0 && !editing;
+  redoButton.disabled = redoStack.length === 0 || editing === true;
+}
+
+function finishTextEditing() {
+  const object = fabricCanvas?.getActiveObject();
+  if (object?.isEditing) object.exitEditing();
+}
+
 function resetHistory() {
   undoStack = [];
   redoStack = [];
   undoTextState = null;
+  updateHistoryControls();
 }
 
 function pushAction(action) {
@@ -60,13 +84,14 @@ function pushAction(action) {
   if (undoStack.length > 5) {
     undoStack.shift();
   }
+  updateHistoryControls();
 }
 
 function undo() {
+  finishTextEditing();
   if (undoStack.length === 0) return;
   const action = undoStack.pop();
   redoStack.push(action);
-
   if (action.type === 'add') {
     fabricCanvas.remove(action.object);
   } else if (action.type === 'delete') {
@@ -75,18 +100,18 @@ function undo() {
     action.object.set(action.prev);
     action.object.setCoords();
   }
-
   fabricCanvas.discardActiveObject();
   fabricCanvas.renderAll();
   handleSelectionCleared();
+  updateHistoryControls();
   showToast('Azione annullata', 'info');
 }
 
 function redo() {
+  finishTextEditing();
   if (redoStack.length === 0) return;
   const action = redoStack.pop();
   undoStack.push(action);
-
   if (action.type === 'add') {
     fabricCanvas.add(action.object);
   } else if (action.type === 'delete') {
@@ -95,10 +120,10 @@ function redo() {
     action.object.set(action.next);
     action.object.setCoords();
   }
-
   fabricCanvas.discardActiveObject();
   fabricCanvas.renderAll();
   handleSelectionCleared();
+  updateHistoryControls();
   showToast('Azione ripristinata', 'info');
 }
 
@@ -177,10 +202,14 @@ function initializeApp() {
   // Setup all event listeners
   setupUploadListeners();
   setupToolListeners();
+  setupHistoryButtons();
+  setupQuickStamps();
+  setupToolbarSpacing();
   setupTextListeners();
   setupPaginationListeners();
   setupZoomListeners();
   setupSignatureListeners();
+  setupSignatureDrawing();
   setupExportDialogListeners();
   
   // Disabilita inizialmente i pulsanti copia/taglia/incolla
@@ -822,30 +851,57 @@ function updateToolButtons() {
   if (currentTool === 'text') textTool.classList.add('active');
 }
 
-// Canvas click handler
-function handleCanvasClick(event) {
-  if (currentTool !== 'text' || event.target) return;
-  const pointer = fabricCanvas.getPointer(event.e);
-  const textbox = new fabric.Textbox('Digita qui...', {
-    left: pointer.x,
-    top: pointer.y,
-    fontFamily: 'Arial',
-    fontSize: 16,
-    fill: '#000000',
-    width: 200,
-    editable: true
+function setupToolbarSpacing() {
+  const observer = new ResizeObserver(function () {
+    canvasContainer.style.paddingTop = toolbar.offsetHeight + 24 + 'px';
+  });
+  observer.observe(toolbar);
+}
+
+function setupQuickStamps() {
+  document.getElementById('quickStamp').addEventListener('change', function (event) {
+    insertQuickStamp(event.target.value);
+    event.target.value = '';
+  });
+}
+
+function insertQuickStamp(type) {
+  if (!fabricCanvas) return;
+  const stamps = {
+    date: new Date().toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
+    check: '✓', cross: '✕'
+  };
+  if (typeof stamps[type] !== 'string') return;
+  let size = 24, width = 40;
+  if (type === 'date') { size = 16; width = 140; }
+  addTextAnnotation(stamps[type], {
+    left: 100 * renderedScale, top: 100 * renderedScale,
+    fontSize: size * renderedScale, width: width * renderedScale
+  });
+  selectTool.click();
+}
+
+function addTextAnnotation(text, options) {
+  finishTextEditing();
+  const textbox = new fabric.Textbox(text, {
+    fontFamily: 'Arial', fontSize: 16, fill: '#000000', width: 200,
+    editable: true, ...options
   });
   fabricCanvas.add(textbox);
   pushAction({ type: 'add', object: textbox });
   fabricCanvas.setActiveObject(textbox);
-  textbox.enterEditing();
-  textbox.selectAll();
-  currentTool = 'select';
-  updateToolButtons();
-  fabricCanvas.selection = true;
-  fabricCanvas.defaultCursor = 'default';
+  fabricCanvas.renderAll();
+  return textbox;
 }
 
+function handleCanvasClick(event) {
+  if (currentTool !== 'text' || event.target) return;
+  const pointer = fabricCanvas.getPointer(event.e);
+  const textbox = addTextAnnotation('Digita qui...', { left: pointer.x, top: pointer.y });
+  textbox.enterEditing();
+  textbox.selectAll();
+  selectTool.click();
+}
 
 // Handle object selection
 function handleSelection(event) {
@@ -937,6 +993,7 @@ function handleEditingEntered(e) {
     fontStyle: obj.fontStyle,
     underline: obj.underline
   };
+  updateHistoryControls();
 }
 
 function handleEditingExited(e) {
@@ -956,6 +1013,7 @@ function handleEditingExited(e) {
     pushAction({ type: 'modify', object: obj, prev: undoTextState, next: next });
   }
   undoTextState = null;
+  updateHistoryControls();
 }
 
 // Cancella l'oggetto selezionato
@@ -1034,6 +1092,7 @@ function downloadPDF(bytes, filename) {
 
 // Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V, Delete)
 function handleKeyboardShortcuts(e) {
+  if (document.getElementById?.('signatureDrawDialog')?.open) return;
   if (handleZoomShortcut(e)) return;
   const target = e.target;
   if (target && (target.isContentEditable || target.closest?.('input, textarea, select'))) return;
@@ -1129,6 +1188,83 @@ function setupSignatureListeners() {
   });
 
   signatureFileInput.addEventListener('change', handleSignatureUpload);
+}
+
+function setupSignatureDrawing() {
+  signatureDrawing = document.getElementById('signatureDrawing');
+  document.getElementById('drawSignatureBtn').addEventListener('click', function () {
+    signaturePanel.style.display = 'none';
+    clearSignatureDrawing();
+    document.getElementById('signatureDrawDialog').showModal();
+  });
+  document.getElementById('clearSignatureDrawing').addEventListener('click', clearSignatureDrawing);
+  document.getElementById('cancelSignatureDrawing').addEventListener('click', function () {
+    document.getElementById('signatureDrawDialog').close();
+  });
+  document.getElementById('saveSignatureDrawing').addEventListener('click', saveDrawnSignature);
+  signatureDrawing.addEventListener('pointerdown', startSignatureStroke);
+  signatureDrawing.addEventListener('pointermove', continueSignatureStroke);
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    signatureDrawing.addEventListener(event, function () { signatureStroke = null; });
+  }
+}
+
+function clearSignatureDrawing() {
+  signatureDrawing.getContext('2d').clearRect(0, 0, signatureDrawing.width, signatureDrawing.height);
+  signatureStroke = null;
+  signatureHasInk = false;
+  document.getElementById('saveSignatureDrawing').disabled = true;
+}
+
+function getSignaturePoint(event) {
+  const bounds = signatureDrawing.getBoundingClientRect();
+  return {
+    x: (event.clientX - bounds.left) * signatureDrawing.width / bounds.width,
+    y: (event.clientY - bounds.top) * signatureDrawing.height / bounds.height,
+    pointerId: event.pointerId
+  };
+}
+
+function startSignatureStroke(event) {
+  if (!event.isPrimary || event.button !== 0) return;
+  event.preventDefault();
+  signatureDrawing.setPointerCapture(event.pointerId);
+  signatureStroke = getSignaturePoint(event);
+  const context = signatureDrawing.getContext('2d');
+  context.beginPath();
+  context.fillStyle = '#000000';
+  context.arc(signatureStroke.x, signatureStroke.y, 1.5, 0, Math.PI * 2);
+  context.fill();
+  signatureHasInk = true;
+  document.getElementById('saveSignatureDrawing').disabled = false;
+}
+
+function continueSignatureStroke(event) {
+  if (!signatureStroke || signatureStroke.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const point = getSignaturePoint(event);
+  const context = signatureDrawing.getContext('2d');
+  context.beginPath();
+  context.lineWidth = 3;
+  context.lineCap = 'round';
+  context.strokeStyle = '#000000';
+  context.moveTo(signatureStroke.x, signatureStroke.y);
+  context.lineTo(point.x, point.y);
+  context.stroke();
+  signatureStroke = point;
+}
+
+function saveDrawnSignature() {
+  if (!signatureHasInk) return;
+  try {
+    saveSignature('Firma disegnata', signatureDrawing.toDataURL('image/png'));
+    loadSignaturesList();
+    document.getElementById('signatureDrawDialog').close();
+    signaturePanel.style.display = 'block';
+    showToast('Firma salvata!', 'success');
+  } catch (error) {
+    showToast('Impossibile salvare la firma: ' + error.message, 'error');
+  }
 }
 
 async function handleSignatureUpload(event) {
