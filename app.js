@@ -648,7 +648,7 @@ async function renderPage(pageNum) {
       fabricCanvas.calcOffset();
     }
     
-    loadPageAnnotations(pageNum, scale);
+    await loadPageAnnotations(pageNum, scale);
     
     // Setup mobile text editing if needed
     // setupMobileTextEditing();
@@ -719,68 +719,37 @@ function savePageAnnotations() {
 }
 
 // Load annotations for current page
-function loadPageAnnotations(pageNum, scale = renderedScale) {
+async function loadPageAnnotations(pageNum, scale = renderedScale) {
   resetHistory();
   const ratio = scale / (annotationScales[pageNum] || scale);
   renderedScale = scale;
   fabricCanvas.clear();
-  
-  const annotations = pageAnnotations[pageNum] || [];
-  
-  annotations.forEach(annotation => {
-    if (annotation.type === 'text') {
-      const textbox = new fabric.Textbox(annotation.text, {
-        left: annotation.left * ratio,
-        top: annotation.top * ratio,
-        fontFamily: annotation.fontFamily,
-        fontSize: annotation.fontSize,
-        fill: annotation.fill,
-        fontWeight: annotation.fontWeight,
-        fontStyle: annotation.fontStyle,
-        underline: annotation.underline,
-        width: annotation.width,
-        scaleX: (annotation.scaleX || 1) * ratio,
-        scaleY: (annotation.scaleY || 1) * ratio,
-        angle: annotation.angle || 0
-      });
-      fabricCanvas.add(textbox);
-    } else if (annotation.type === 'image') {
-      fabric.Image.fromURL(annotation.src, (img) => {
-        let scaleX, scaleY;
-        
-        // Nuovo formato: usa displayWidth/displayHeight
-        if (annotation.displayWidth && annotation.displayHeight) {
-          scaleX = annotation.displayWidth / img.width;
-          scaleY = annotation.displayHeight / img.height;
-        } 
-        // Retrocompatibilità: vecchio formato con width/height/scaleX/scaleY
-        else if (annotation.scaleX && annotation.scaleY) {
-          const displayWidth = annotation.width * annotation.scaleX;
-          const displayHeight = annotation.height * annotation.scaleY;
-          scaleX = displayWidth / img.width;
-          scaleY = displayHeight / img.height;
-        }
-        // Fallback
-        else {
-          scaleX = 1;
-          scaleY = 1;
-        }
-        
-        img.set({
-          left: annotation.left * ratio,
-          top: annotation.top * ratio,
-          scaleX: scaleX * ratio,
-          scaleY: scaleY * ratio,
-          angle: annotation.angle || 0
-        });
-        fabricCanvas.add(img);
-      });
-    }
-  });
+  for (const annotation of pageAnnotations[pageNum] || []) {
+    fabricCanvas.add(await createAnnotationObject(annotation, ratio));
+  }
   fabricCanvas.renderAll();
 }
 
-
+async function createAnnotationObject(annotation, ratio) {
+  const { type, text, ...options } = annotation;
+  options.left *= ratio;
+  options.top *= ratio;
+  options.scaleX = (annotation.scaleX || 1) * ratio;
+  options.scaleY = (annotation.scaleY || 1) * ratio;
+  if (type === 'text') return new fabric.Textbox(text, options);
+  const image = await new Promise(function (resolve, reject) {
+    fabric.Image.fromURL(annotation.src, function (image, error) {
+      if (error || !image) reject(new Error('Immagine non disponibile'));
+      else resolve(image);
+    });
+  });
+  if (annotation.displayWidth && annotation.displayHeight) {
+    options.scaleX = annotation.displayWidth * ratio / image.width;
+    options.scaleY = annotation.displayHeight * ratio / image.height;
+  }
+  image.set(options);
+  return image;
+}
 
 function updateToolButtons() {
   // Resetta tutti i tool buttons (nessuna classe tool-btn, sono .btn ora)
