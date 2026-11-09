@@ -203,8 +203,19 @@
         <button id="closeSignaturePanel" class="btn btn-small">✕</button>
       </div>
       <div id="signatureList" class="signature-list"></div>
-      <button id="addSignatureBtn" class="btn btn-primary">+ Aggiungi Firma</button>
+      <button id="addSignatureBtn" class="btn btn-primary">Carica firma</button>
+      <button id="drawSignatureBtn" class="btn">Disegna firma</button>
     </div>
+
+    <dialog id="signatureDrawDialog" class="export-dialog-content" aria-labelledby="signatureDrawTitle">
+      <h3 id="signatureDrawTitle">Disegna la tua firma</h3>
+      <canvas id="signatureDrawing" width="480" height="180" tabindex="0" aria-label="Disegna la firma con mouse, penna o dito"></canvas>
+      <div class="export-dialog-buttons">
+        <button id="clearSignatureDrawing" class="btn">Pulisci</button>
+        <button id="cancelSignatureDrawing" class="btn">Annulla</button>
+        <button id="saveSignatureDrawing" class="btn btn-primary" disabled>Salva firma</button>
+      </div>
+    </dialog>
 
     <!-- Export Dialog -->
     <div id="exportDialog" class="export-dialog" style="display: none;">

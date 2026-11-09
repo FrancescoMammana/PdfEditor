@@ -34,6 +34,9 @@ let undoTextState = null;
 // Signature tool elements
 let signatureTool, signatureFileInput, signaturePanel;
 let closeSignaturePanel, signatureList, addSignatureBtn;
+let signatureDrawing = null;
+let signatureStroke = null;
+let signatureHasInk = false;
 
 // Export dialog elements
 let exportDialog, exportFilename, cancelExport, confirmExport;
@@ -204,6 +207,7 @@ function initializeApp() {
   setupPaginationListeners();
   setupZoomListeners();
   setupSignatureListeners();
+  setupSignatureDrawing();
   setupExportDialogListeners();
   
   // Disabilita inizialmente i pulsanti copia/taglia/incolla
@@ -1059,6 +1063,7 @@ function downloadPDF(bytes, filename) {
 
 // Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V, Delete)
 function handleKeyboardShortcuts(e) {
+  if (document.getElementById?.('signatureDrawDialog')?.open) return;
   if (handleZoomShortcut(e)) return;
   const target = e.target;
   if (target && (target.isContentEditable || target.closest?.('input, textarea, select'))) return;
@@ -1154,6 +1159,83 @@ function setupSignatureListeners() {
   });
 
   signatureFileInput.addEventListener('change', handleSignatureUpload);
+}
+
+function setupSignatureDrawing() {
+  signatureDrawing = document.getElementById('signatureDrawing');
+  document.getElementById('drawSignatureBtn').addEventListener('click', function () {
+    signaturePanel.style.display = 'none';
+    clearSignatureDrawing();
+    document.getElementById('signatureDrawDialog').showModal();
+  });
+  document.getElementById('clearSignatureDrawing').addEventListener('click', clearSignatureDrawing);
+  document.getElementById('cancelSignatureDrawing').addEventListener('click', function () {
+    document.getElementById('signatureDrawDialog').close();
+  });
+  document.getElementById('saveSignatureDrawing').addEventListener('click', saveDrawnSignature);
+  signatureDrawing.addEventListener('pointerdown', startSignatureStroke);
+  signatureDrawing.addEventListener('pointermove', continueSignatureStroke);
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    signatureDrawing.addEventListener(event, function () { signatureStroke = null; });
+  }
+}
+
+function clearSignatureDrawing() {
+  signatureDrawing.getContext('2d').clearRect(0, 0, signatureDrawing.width, signatureDrawing.height);
+  signatureStroke = null;
+  signatureHasInk = false;
+  document.getElementById('saveSignatureDrawing').disabled = true;
+}
+
+function getSignaturePoint(event) {
+  const bounds = signatureDrawing.getBoundingClientRect();
+  return {
+    x: (event.clientX - bounds.left) * signatureDrawing.width / bounds.width,
+    y: (event.clientY - bounds.top) * signatureDrawing.height / bounds.height,
+    pointerId: event.pointerId
+  };
+}
+
+function startSignatureStroke(event) {
+  if (!event.isPrimary || event.button !== 0) return;
+  event.preventDefault();
+  signatureDrawing.setPointerCapture(event.pointerId);
+  signatureStroke = getSignaturePoint(event);
+  const context = signatureDrawing.getContext('2d');
+  context.beginPath();
+  context.fillStyle = '#000000';
+  context.arc(signatureStroke.x, signatureStroke.y, 1.5, 0, Math.PI * 2);
+  context.fill();
+  signatureHasInk = true;
+  document.getElementById('saveSignatureDrawing').disabled = false;
+}
+
+function continueSignatureStroke(event) {
+  if (!signatureStroke || signatureStroke.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const point = getSignaturePoint(event);
+  const context = signatureDrawing.getContext('2d');
+  context.beginPath();
+  context.lineWidth = 3;
+  context.lineCap = 'round';
+  context.strokeStyle = '#000000';
+  context.moveTo(signatureStroke.x, signatureStroke.y);
+  context.lineTo(point.x, point.y);
+  context.stroke();
+  signatureStroke = point;
+}
+
+function saveDrawnSignature() {
+  if (!signatureHasInk) return;
+  try {
+    saveSignature('Firma disegnata', signatureDrawing.toDataURL('image/png'));
+    loadSignaturesList();
+    document.getElementById('signatureDrawDialog').close();
+    signaturePanel.style.display = 'block';
+    showToast('Firma salvata!', 'success');
+  } catch (error) {
+    showToast('Impossibile salvare la firma: ' + error.message, 'error');
+  }
 }
 
 async function handleSignatureUpload(event) {

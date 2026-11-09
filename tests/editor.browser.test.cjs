@@ -330,3 +330,80 @@ test('history buttons finish a text edit before undoing it', async function () {
   await page.click('#redoBtn');
   assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects()[0].text; }), 'Modificato');
 });
+
+async function openSignatureDrawing() {
+  if (!await page.locator('#drawSignatureBtn').isVisible()) await page.click('#signatureTool');
+  await page.click('#drawSignatureBtn');
+}
+
+async function drawMouseSignature() {
+  const bounds = await page.locator('#signatureDrawing').boundingBox();
+  await page.mouse.move(bounds.x + bounds.width * 0.2, bounds.y + bounds.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 0.4, bounds.y + bounds.height * 0.3, { steps: 8 });
+  await page.mouse.move(bounds.x + bounds.width * 0.6, bounds.y + bounds.height * 0.7, { steps: 8 });
+  await page.mouse.up();
+}
+
+test('signature drawing rejects an empty drawing and supports clear, cancel and Escape', async function () {
+  await openSignatureDrawing();
+  assert.equal(await page.isDisabled('#saveSignatureDrawing'), true);
+  await drawMouseSignature();
+  assert.equal(await page.isDisabled('#saveSignatureDrawing'), false);
+  await page.click('#clearSignatureDrawing');
+  assert.equal(await page.isDisabled('#saveSignatureDrawing'), true);
+  await drawMouseSignature();
+  await page.click('#cancelSignatureDrawing');
+  assert.equal(await page.evaluate(function () { return getSignatures().length; }), 0);
+  await openSignatureDrawing();
+  assert.equal(await page.isDisabled('#saveSignatureDrawing'), true);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#signatureDrawDialog').isVisible(), false);
+});
+
+test('drawn signatures reuse PNG storage, insertion, history, zoom and export', async function () {
+  await openSignatureDrawing();
+  await drawMouseSignature();
+  await page.click('#saveSignatureDrawing');
+  const stored = await page.evaluate(function () { return getSignatures()[0].data; });
+  assert.ok(stored.startsWith('data:image/png;base64,'));
+  await page.click('.signature-item img');
+  await page.waitForFunction(function () { return fabricCanvas.getObjects().length === 1; });
+  const transparency = await page.evaluate(function () {
+    const image = fabricCanvas.getObjects()[0].getElement();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width; canvas.height = image.height;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    return { transparent: pixels[3] === 0, ink: pixels.some(function (value, index) { return index % 4 === 3 && value > 0; }) };
+  });
+  assert.deepEqual(transparency, { transparent: true, ink: true });
+  await page.click('#undoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 0);
+  await page.click('#redoBtn');
+  await page.evaluate(async function () { await changeZoom(25); });
+  await page.click('#nextPage');
+  await page.waitForFunction(function () { return currentPage === 2 && fabricCanvas.getObjects().length === 0; });
+  await page.click('#prevPage');
+  await page.waitForFunction(function () { return currentPage === 1 && fabricCanvas.getObjects().length === 1; });
+  assert.ok((await exportInkBounds()).every(Number.isFinite));
+});
+
+test('signature drawing supports touch in the mobile dialog without scrolling', async function () {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+  await openSignatureDrawing();
+  const bounds = await page.locator('#signatureDrawing').boundingBox();
+  assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 390);
+  const scroll = await page.evaluate(function () { return window.scrollY; });
+  const x = bounds.x + bounds.width * 0.2, y = bounds.y + bounds.height * 0.4;
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 60, y: y + 20 }] });
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  assert.equal(await page.isDisabled('#saveSignatureDrawing'), false);
+  assert.equal(await page.evaluate(function () { return window.scrollY; }), scroll);
+  assert.equal(await page.evaluate(function () { return signatureStroke; }), null);
+  await page.click('#cancelSignatureDrawing');
+});
