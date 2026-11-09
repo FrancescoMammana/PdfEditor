@@ -626,8 +626,8 @@ async function renderPage(pageNum) {
       fabricCanvas.on('selection:cleared', handleSelectionCleared);
       fabricCanvas.on('mouse:down', handleCanvasClick);
       fabricCanvas.on('object:modified', handleObjectModified);
-      fabricCanvas.on('editing:entered', handleEditingEntered);
-      fabricCanvas.on('editing:exited', handleEditingExited);
+      fabricCanvas.on('text:editing:entered', handleEditingEntered);
+      fabricCanvas.on('text:editing:exited', handleEditingExited);
       // fabricCanvas.on('touch:touch', handleCanvasClick);
     } else {
       fabricCanvas.setWidth(viewport.width);
