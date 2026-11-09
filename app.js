@@ -872,7 +872,8 @@ function handleSelectionCleared() {
 
 function handleObjectModified(e) {
   const obj = e.target;
-  const original = e.transform.original;
+  const original = e.transform?.original;
+  if (!original) return;
   pushAction({
     type: 'modify',
     object: obj,
