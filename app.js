@@ -9,6 +9,9 @@ let fabricCanvas = null;
 let currentTool = 'select';
 let pdfBytes = null;
 let pageAnnotations = {}; // Store annotations per page
+let annotationScales = {};
+let pageOverlays = {};
+let renderedScale = 1.5;
 let originalFilename = ''; // Nome del file PDF originale caricato
 
 
@@ -552,6 +555,8 @@ async function loadPDFFile(file) {
     
     // Initialize page annotations storage
     pageAnnotations = {};
+    annotationScales = {};
+    pageOverlays = {};
     for (let i = 1; i <= totalPages; i++) {
       pageAnnotations[i] = [];
     }
@@ -643,7 +648,7 @@ async function renderPage(pageNum) {
       fabricCanvas.calcOffset();
     }
     
-    loadPageAnnotations(pageNum);
+    await loadPageAnnotations(pageNum, scale);
     
     // Setup mobile text editing if needed
     // setupMobileTextEditing();
@@ -694,7 +699,7 @@ function savePageAnnotations() {
       // Questo permette di ricalcolare correttamente lo scale quando si ricarica l'immagine
       return {
         type: 'image',
-        src: obj.toDataURL(),
+        src: obj.getSrc(),
         left: obj.left,
         top: obj.top,
         displayWidth: obj.width * obj.scaleX,
@@ -706,69 +711,45 @@ function savePageAnnotations() {
   }).filter(Boolean);
   
   pageAnnotations[currentPage] = annotations;
+  annotationScales[currentPage] = renderedScale;
+  pageOverlays[currentPage] = null;
+  if (annotations.length > 0) {
+    pageOverlays[currentPage] = fabricCanvas.toDataURL({ multiplier: 3 / renderedScale });
+  }
 }
 
 // Load annotations for current page
-function loadPageAnnotations(pageNum) {
+async function loadPageAnnotations(pageNum, scale = renderedScale) {
   resetHistory();
+  const ratio = scale / (annotationScales[pageNum] || scale);
+  renderedScale = scale;
   fabricCanvas.clear();
-  
-  const annotations = pageAnnotations[pageNum] || [];
-  
-  annotations.forEach(annotation => {
-    if (annotation.type === 'text') {
-      const textbox = new fabric.Textbox(annotation.text, {
-        left: annotation.left,
-        top: annotation.top,
-        fontFamily: annotation.fontFamily,
-        fontSize: annotation.fontSize,
-        fill: annotation.fill,
-        fontWeight: annotation.fontWeight,
-        fontStyle: annotation.fontStyle,
-        underline: annotation.underline,
-        width: annotation.width,
-        scaleX: annotation.scaleX || 1,
-        scaleY: annotation.scaleY || 1,
-        angle: annotation.angle || 0
-      });
-      fabricCanvas.add(textbox);
-    } else if (annotation.type === 'image') {
-      fabric.Image.fromURL(annotation.src, (img) => {
-        let scaleX, scaleY;
-        
-        // Nuovo formato: usa displayWidth/displayHeight
-        if (annotation.displayWidth && annotation.displayHeight) {
-          scaleX = annotation.displayWidth / img.width;
-          scaleY = annotation.displayHeight / img.height;
-        } 
-        // Retrocompatibilità: vecchio formato con width/height/scaleX/scaleY
-        else if (annotation.scaleX && annotation.scaleY) {
-          const displayWidth = annotation.width * annotation.scaleX;
-          const displayHeight = annotation.height * annotation.scaleY;
-          scaleX = displayWidth / img.width;
-          scaleY = displayHeight / img.height;
-        }
-        // Fallback
-        else {
-          scaleX = 1;
-          scaleY = 1;
-        }
-        
-        img.set({
-          left: annotation.left,
-          top: annotation.top,
-          scaleX: scaleX,
-          scaleY: scaleY,
-          angle: annotation.angle || 0
-        });
-        fabricCanvas.add(img);
-      });
-    }
-  });
+  for (const annotation of pageAnnotations[pageNum] || []) {
+    fabricCanvas.add(await createAnnotationObject(annotation, ratio));
+  }
   fabricCanvas.renderAll();
 }
 
-
+async function createAnnotationObject(annotation, ratio) {
+  const { type, text, ...options } = annotation;
+  options.left *= ratio;
+  options.top *= ratio;
+  options.scaleX = (annotation.scaleX || 1) * ratio;
+  options.scaleY = (annotation.scaleY || 1) * ratio;
+  if (type === 'text') return new fabric.Textbox(text, options);
+  const image = await new Promise(function (resolve, reject) {
+    fabric.Image.fromURL(annotation.src, function (image, error) {
+      if (error || !image) reject(new Error('Immagine non disponibile'));
+      else resolve(image);
+    });
+  });
+  if (annotation.displayWidth && annotation.displayHeight) {
+    options.scaleX = annotation.displayWidth * ratio / image.width;
+    options.scaleY = annotation.displayHeight * ratio / image.height;
+  }
+  image.set(options);
+  return image;
+}
 
 function updateToolButtons() {
   // Resetta tutti i tool buttons (nessuna classe tool-btn, sono .btn ora)
@@ -938,193 +919,55 @@ function updatePagination() {
 
 async function exportPDF(filename) {
   try {
-    if (!pdfDoc) {
-      throw new Error('Nessun PDF caricato');
-    }
-
-    if (!pdfBytes) {
-      throw new Error('Dati PDF non disponibili. Ricarica il PDF.');
-    }
-
-    if (pdfBytes.length === 0) {
-      throw new Error('File PDF vuoto. Ricarica il PDF.');
-    }
- 
-    
-    // Verifica header
-    //console.log('pdfBytes type:', pdfBytes.constructor.name);
-    //console.log('pdfBytes is null?', pdfBytes === null);
-    const header = String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
-    //console.log('PDF header check:', header);
-    
-    if (header !== '%PDF') {
-      throw new Error('File PDF non valido (header: ' + header + ')');
-    }
-    
-    //console.log('pdfBytes valid, length:', pdfBytes.length);
+    if (!pdfDoc || !pdfBytes?.length) throw new Error('Ricarica un PDF valido.');
     showToast('Generazione PDF in corso...', 'info');
-    
-    // Save current page annotations BEFORE export
     saveCurrentPageAnnotations();
-    
-    // Load original PDF with pdf-lib
-    //console.log('Loading PDF with pdf-lib, pdfBytes length:', pdfBytes.length);
-    const pdfLibDoc = await PDFLib.PDFDocument.load(new Uint8Array(pdfBytes), { 
-      ignoreEncryption: true,
-      updateMetadata: false 
+    const document = await PDFLib.PDFDocument.load(new Uint8Array(pdfBytes), {
+      updateMetadata: false
     });
-    
-    //console.log('PDF loaded in pdf-lib, pages:', pdfLibDoc.getPageCount());
-    
-    const scale = 1.5;
-    const pageCount = pdfLibDoc.getPageCount();
-    
-    // Process each page
-    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-      const page = pdfLibDoc.getPage(pageNum - 1);
-      const { width, height } = page.getSize();
-      const annotations = pageAnnotations[pageNum] || [];
-      
-      console.log(`Processing page ${pageNum}, annotations:`, annotations.length);
-      
-      if (annotations.length === 0) continue;
-      
-      for (const annotation of annotations) {
-        try {
-          if (annotation.type === 'text' && annotation.text) {
-            // Text annotation
-            console.log('Adding text:', annotation.text.substring(0, 20));
-            
-            const pdfX = annotation.left / scale;
-            const pdfY = height - (annotation.top / scale) - (annotation.fontSize / scale);
-            
-            let font;
-            const fontName = annotation.fontFamily || 'Helvetica';
-            
-            try {
-              if (fontName.toLowerCase().includes('courier')) {
-                font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Courier);
-              } else if (fontName.toLowerCase().includes('times')) {
-                font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
-              } else if (fontName.toLowerCase().includes('verdana')) {
-                font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-              } else {
-                font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-              }
-            } catch (fontError) {
-              console.warn('Font error, using Helvetica:', fontError);
-              font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-            }
-            
-            const color = hexToRgb(annotation.fill || '#000000');
-            const fontSize = (annotation.fontSize || 16) / scale;
-            
-            page.drawText(annotation.text, {
-              x: pdfX,
-              y: pdfY,
-              size: fontSize,
-              font: font,
-              color: PDFLib.rgb(color.r / 255, color.g / 255, color.b / 255)
-            });
-            
-          } else if (annotation.type === 'image' && annotation.src) {
-            // Image annotation
-            console.log('Adding image');
-            
-            try {
-              // Extract base64 from data URL
-              let base64Data;
-              if (annotation.src.includes(',')) {
-                base64Data = annotation.src.split(',')[1];
-              } else {
-                base64Data = annotation.src;
-              }
-              
-              // Convert base64 to bytes
-              const binaryString = atob(base64Data);
-              const imageBytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                imageBytes[i] = binaryString.charCodeAt(i);
-              }
-              
-              // Determine image type
-              const isPNG = annotation.src.includes('image/png') || 
-                           binaryString.charCodeAt(0) === 137; // PNG magic number
-              
-              let image;
-              try {
-                if (isPNG) {
-                  image = await pdfLibDoc.embedPng(imageBytes);
-                } else {
-                  image = await pdfLibDoc.embedJpg(imageBytes);
-                }
-              } catch (embedError) {
-                console.warn('Trying JPG format:', embedError);
-                image = await pdfLibDoc.embedJpg(imageBytes);
-              }
-              
-              const imgWidth = (annotation.displayWidth || annotation.width) / scale;
-              const imgHeight = (annotation.displayHeight || annotation.height) / scale;
-              const pdfX = annotation.left / scale;
-              const pdfY = height - (annotation.top / scale) - imgHeight;
-              
-              page.drawImage(image, {
-                x: pdfX,
-                y: pdfY,
-                width: imgWidth,
-                height: imgHeight
-              });
-            } catch (imageError) {
-              console.error('Error adding image:', imageError);
-              // Continue without this image
-            }
-          }
-        } catch (annotationError) {
-          console.error('Error processing annotation:', annotationError);
-          // Continue with next annotation
-        }
-      }
+    for (let pageNum = 1; pageNum <= document.getPageCount(); pageNum++) {
+      if (!pageOverlays[pageNum]) continue;
+      await exportPageOverlay(document, pageNum);
     }
-    
-    // Save and download
-    //console.log('Saving modified PDF...');
-    const pdfBytesModified = await pdfLibDoc.save();
-    
-    // Create blob and download
-    const blob = new Blob([pdfBytesModified], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.style.display = 'none';
-    
-    document.body.appendChild(link);
-    link.click();
-    
-    // Cleanup
-    setTimeout(() => {
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }, 100);
-    
-    //console.log('PDF exported successfully!');
+    downloadPDF(await document.save(), filename);
     showToast('PDF esportato con successo!', 'success');
-    
   } catch (error) {
     console.error('Export PDF error:', error);
     showToast('Errore durante l\'esportazione: ' + error.message, 'error');
   }
 }
 
-// Utility function to convert hex to RGB
-function hexToRgb(hex) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : { r: 0, g: 0, b: 0 };
+async function exportPageOverlay(document, pageNum) {
+  const sourcePage = await pdfDoc.getPage(pageNum);
+  const viewport = sourcePage.getViewport({ scale: 1 });
+  const image = await document.embedPng(pageOverlays[pageNum]);
+  const page = document.getPage(pageNum - 1);
+  const origin = viewport.convertToPdfPoint(0, viewport.height);
+  const right = viewport.convertToPdfPoint(viewport.width, viewport.height);
+  const top = viewport.convertToPdfPoint(0, 0);
+  page.pushOperators(PDFLib.pushGraphicsState(), PDFLib.concatTransformationMatrix(
+    (right[0] - origin[0]) / viewport.width,
+    (right[1] - origin[1]) / viewport.width,
+    (top[0] - origin[0]) / viewport.height,
+    (top[1] - origin[1]) / viewport.height,
+    origin[0], origin[1]
+  ));
+  page.drawImage(image, { x: 0, y: 0, width: viewport.width, height: viewport.height });
+  page.pushOperators(PDFLib.popGraphicsState());
+}
+
+function downloadPDF(bytes, filename) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(function () {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
 // Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V, Delete)
