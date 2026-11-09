@@ -1148,19 +1148,20 @@ function handleKeyboardShortcuts(e) {
     return;
   }
 
-  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+  const key = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && key === 'c') {
     e.preventDefault();
     copySelectedObject();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+  } else if ((e.ctrlKey || e.metaKey) && key === 'x') {
     e.preventDefault();
     cutSelectedObject();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+  } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
     e.preventDefault();
     pasteObject();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+  } else if ((e.ctrlKey || e.metaKey) && key === 'z') {
     e.preventDefault();
     undo();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+  } else if ((e.ctrlKey || e.metaKey) && key === 'y') {
     e.preventDefault();
     redo();
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
