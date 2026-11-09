@@ -42,6 +42,12 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+function resetHistory() {
+  undoStack = [];
+  redoStack = [];
+  undoTextState = null;
+}
+
 function pushAction(action) {
   undoStack.push(action);
   redoStack = [];
@@ -442,6 +448,7 @@ function setupPaginationListeners() {
   prevPageBtn.addEventListener('click', () => {
     if (currentPage > 1) {
       savePageAnnotations();
+      resetHistory();
       currentPage--;
       renderPage(currentPage);
       updatePagination();
@@ -451,6 +458,7 @@ function setupPaginationListeners() {
   nextPageBtn.addEventListener('click', () => {
     if (currentPage < totalPages) {
       savePageAnnotations();
+      resetHistory();
       currentPage++;
       renderPage(currentPage);
       updatePagination();
@@ -702,6 +710,7 @@ function savePageAnnotations() {
 
 // Load annotations for current page
 function loadPageAnnotations(pageNum) {
+  resetHistory();
   fabricCanvas.clear();
   
   const annotations = pageAnnotations[pageNum] || [];
