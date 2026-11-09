@@ -1142,28 +1142,18 @@ function hexToRgb(hex) {
 
 // Gestione scorciatoie da tastiera (Ctrl+C, Ctrl+X, Ctrl+V, Delete)
 function handleKeyboardShortcuts(e) {
-  // Non intercettare se si sta modificando un testo
-  if (fabricCanvas && fabricCanvas.getActiveObject() && 
-      fabricCanvas.getActiveObject().isEditing) {
-    return;
-  }
+  const target = e.target;
+  if (target && (target.isContentEditable || target.closest?.('input, textarea, select'))) return;
+  if (fabricCanvas && fabricCanvas.getActiveObject()?.isEditing) return;
 
-  const key = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && key === 'c') {
+  const actions = {
+    c: copySelectedObject, x: cutSelectedObject, v: pasteObject,
+    z: undo, y: redo
+  };
+  const action = actions[e.key.toLowerCase()];
+  if ((e.ctrlKey || e.metaKey) && action) {
     e.preventDefault();
-    copySelectedObject();
-  } else if ((e.ctrlKey || e.metaKey) && key === 'x') {
-    e.preventDefault();
-    cutSelectedObject();
-  } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
-    e.preventDefault();
-    pasteObject();
-  } else if ((e.ctrlKey || e.metaKey) && key === 'z') {
-    e.preventDefault();
-    undo();
-  } else if ((e.ctrlKey || e.metaKey) && key === 'y') {
-    e.preventDefault();
-    redo();
+    action();
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
     e.preventDefault();
     deleteSelectedObject();

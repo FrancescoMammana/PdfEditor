@@ -34,3 +34,29 @@ for (const modifier of ['ctrlKey', 'metaKey']) {
     }
   }
 }
+
+for (const target of [
+  { closest() { return { tagName: 'INPUT' }; } },
+  { closest() { return { tagName: 'TEXTAREA' }; } },
+  { closest() { return { tagName: 'SELECT' }; } },
+  { isContentEditable: true }
+]) {
+  for (const key of ['c', 'C', 'x', 'v', 'z', 'y', 'Backspace', 'Delete']) {
+    test(`preserves native ${key} in an editable control`, function () {
+      const editor = createEditor();
+      const unexpected = function () { assert.fail('Editor shortcut intercepted input'); };
+      for (const action of ['copySelectedObject', 'cutSelectedObject', 'pasteObject',
+        'undo', 'redo', 'deleteSelectedObject']) editor[action] = unexpected;
+      editor.handleKeyboardShortcuts({ key, ctrlKey: true, target, preventDefault: unexpected });
+    });
+  }
+}
+
+test('preserves native shortcuts while a Fabric textbox is being edited', function () {
+  const editor = createEditor();
+  vm.runInContext('fabricCanvas = { getActiveObject() { return { isEditing: true }; } };', editor);
+  editor.handleKeyboardShortcuts({
+    key: 'v', ctrlKey: true,
+    preventDefault() { assert.fail('Native text paste was intercepted'); }
+  });
+});
