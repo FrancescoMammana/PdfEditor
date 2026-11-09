@@ -1827,6 +1827,7 @@ body {
   }
   
   .toolbar-section.tools-group {
+    flex-wrap: wrap;
     order: 3;
     width: 100%;
     justify-content: center;
@@ -2043,6 +2044,7 @@ body {
 }
 
 #signatureDrawDialog {
+  margin: auto;
   width: 480px;
   min-width: 0;
   border: 1px solid #ccc;

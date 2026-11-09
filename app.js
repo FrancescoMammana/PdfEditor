@@ -203,6 +203,8 @@ function initializeApp() {
   setupUploadListeners();
   setupToolListeners();
   setupHistoryButtons();
+  setupQuickStamps();
+  setupToolbarSpacing();
   setupTextListeners();
   setupPaginationListeners();
   setupZoomListeners();
@@ -849,30 +851,57 @@ function updateToolButtons() {
   if (currentTool === 'text') textTool.classList.add('active');
 }
 
-// Canvas click handler
-function handleCanvasClick(event) {
-  if (currentTool !== 'text' || event.target) return;
-  const pointer = fabricCanvas.getPointer(event.e);
-  const textbox = new fabric.Textbox('Digita qui...', {
-    left: pointer.x,
-    top: pointer.y,
-    fontFamily: 'Arial',
-    fontSize: 16,
-    fill: '#000000',
-    width: 200,
-    editable: true
+function setupToolbarSpacing() {
+  const observer = new ResizeObserver(function () {
+    canvasContainer.style.paddingTop = toolbar.offsetHeight + 24 + 'px';
+  });
+  observer.observe(toolbar);
+}
+
+function setupQuickStamps() {
+  document.getElementById('quickStamp').addEventListener('change', function (event) {
+    insertQuickStamp(event.target.value);
+    event.target.value = '';
+  });
+}
+
+function insertQuickStamp(type) {
+  if (!fabricCanvas) return;
+  const stamps = {
+    date: new Date().toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
+    check: '✓', cross: '✕'
+  };
+  if (typeof stamps[type] !== 'string') return;
+  let size = 24, width = 40;
+  if (type === 'date') { size = 16; width = 140; }
+  addTextAnnotation(stamps[type], {
+    left: 100 * renderedScale, top: 100 * renderedScale,
+    fontSize: size * renderedScale, width: width * renderedScale
+  });
+  selectTool.click();
+}
+
+function addTextAnnotation(text, options) {
+  finishTextEditing();
+  const textbox = new fabric.Textbox(text, {
+    fontFamily: 'Arial', fontSize: 16, fill: '#000000', width: 200,
+    editable: true, ...options
   });
   fabricCanvas.add(textbox);
   pushAction({ type: 'add', object: textbox });
   fabricCanvas.setActiveObject(textbox);
-  textbox.enterEditing();
-  textbox.selectAll();
-  currentTool = 'select';
-  updateToolButtons();
-  fabricCanvas.selection = true;
-  fabricCanvas.defaultCursor = 'default';
+  fabricCanvas.renderAll();
+  return textbox;
 }
 
+function handleCanvasClick(event) {
+  if (currentTool !== 'text' || event.target) return;
+  const pointer = fabricCanvas.getPointer(event.e);
+  const textbox = addTextAnnotation('Digita qui...', { left: pointer.x, top: pointer.y });
+  textbox.enterEditing();
+  textbox.selectAll();
+  selectTool.click();
+}
 
 // Handle object selection
 function handleSelection(event) {

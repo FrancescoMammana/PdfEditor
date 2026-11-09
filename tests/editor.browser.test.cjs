@@ -346,7 +346,11 @@ async function drawMouseSignature() {
 }
 
 test('signature drawing rejects an empty drawing and supports clear, cancel and Escape', async function () {
+  await addText();
   await openSignatureDrawing();
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Backspace');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 1);
   assert.equal(await page.isDisabled('#saveSignatureDrawing'), true);
   await drawMouseSignature();
   assert.equal(await page.isDisabled('#saveSignatureDrawing'), false);
@@ -406,4 +410,85 @@ test('signature drawing supports touch in the mobile dialog without scrolling', 
   assert.equal(await page.evaluate(function () { return window.scrollY; }), scroll);
   assert.equal(await page.evaluate(function () { return signatureStroke; }), null);
   await page.click('#cancelSignatureDrawing');
+});
+
+test('quick stamps insert editable text and reset their compact selector', async function () {
+  const date = await page.evaluate(function () {
+    return new Date().toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
+  });
+  for (const [type, expected] of [['date', date], ['check', '✓'], ['cross', '✕']]) {
+    await page.selectOption('#quickStamp', type);
+    const object = await page.evaluate(function () {
+      const object = fabricCanvas.getActiveObject();
+      return { type: object.type, text: object.text, editable: object.editable };
+    });
+    assert.deepEqual(object, { type: 'textbox', text: expected, editable: true });
+    assert.equal(await page.inputValue('#quickStamp'), '');
+  }
+  await page.fill('#fontSize', '30');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getActiveObject().fontSize; }), 30);
+  await page.click('#undoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 2);
+  await page.click('#redoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 3);
+});
+
+test('quick stamps keep PDF dimensions when inserted at different zoom levels', async function () {
+  await page.selectOption('#quickStamp', 'check');
+  const initial = await getGeometry();
+  await page.evaluate(async function () { await changeZoom(100); });
+  await page.selectOption('#quickStamp', 'check');
+  const dimensions = await page.evaluate(function () {
+    return fabricCanvas.getObjects().map(function (object) {
+      return [object.left / renderedScale, object.top / renderedScale,
+        object.fontSize * object.scaleY / renderedScale, object.width * object.scaleX / renderedScale];
+    });
+  });
+  assert.deepEqual(dimensions[0], dimensions[1]);
+  assert.equal(dimensions[0][2], 24);
+  assertAnnotationGeometry(initial, await getGeometry());
+});
+
+test('quick stamps survive page changes, zoom and PDF export', async function () {
+  await page.selectOption('#quickStamp', 'check');
+  await page.selectOption('#quickStamp', 'cross');
+  await page.selectOption('#quickStamp', 'date');
+  await page.click('#nextPage');
+  await page.waitForFunction(function () { return currentPage === 2 && fabricCanvas.getObjects().length === 0; });
+  await page.click('#prevPage');
+  await page.waitForFunction(function () { return currentPage === 1 && fabricCanvas.getObjects().length === 3; });
+  const bounds = await exportInkBounds();
+  assert.ok(bounds.every(Number.isFinite));
+  await page.evaluate(async function () { await changeZoom(50); });
+  const actual = await exportInkBounds();
+  for (let index = 0; index < bounds.length; index++) assert.ok(Math.abs(bounds[index] - actual[index]) <= 2);
+});
+
+test('standard text insertion still enters editing and records text changes', async function () {
+  await page.click('#textTool');
+  await page.click('.upper-canvas', { position: { x: 200, y: 220 } });
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getActiveObject().isEditing; }), true);
+  await page.keyboard.type('Testo inserito');
+  await page.click('#undoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects()[0].text; }), 'Digita qui...');
+  await page.click('#undoBtn');
+  assert.equal(await page.evaluate(function () { return fabricCanvas.getObjects().length; }), 0);
+});
+
+
+test('the mobile toolbar leaves newly inserted stamps visible', async function () {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForFunction(function () { return fabricCanvas.width < 500; });
+  await page.selectOption('#quickStamp', 'check');
+  await page.waitForFunction(function () {
+    return pdfCanvas.getBoundingClientRect().top > toolbar.getBoundingClientRect().bottom;
+  });
+  const bounds = await page.evaluate(function () {
+    const object = fabricCanvas.getActiveObject();
+    const canvas = pdfCanvas.getBoundingClientRect();
+    return { top: canvas.top + object.top, bottom: canvas.top + object.top + object.getScaledHeight(),
+      toolbar: toolbar.getBoundingClientRect().bottom, pagination: pagination.getBoundingClientRect().top };
+  });
+  assert.ok(bounds.top > bounds.toolbar);
+  assert.ok(bounds.bottom < bounds.pagination);
 });
