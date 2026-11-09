@@ -9,6 +9,8 @@ let fabricCanvas = null;
 let currentTool = 'select';
 let pdfBytes = null;
 let pageAnnotations = {}; // Store annotations per page
+let annotationScales = {};
+let renderedScale = 1.5;
 let originalFilename = ''; // Nome del file PDF originale caricato
 
 
@@ -552,6 +554,7 @@ async function loadPDFFile(file) {
     
     // Initialize page annotations storage
     pageAnnotations = {};
+    annotationScales = {};
     for (let i = 1; i <= totalPages; i++) {
       pageAnnotations[i] = [];
     }
@@ -643,7 +646,7 @@ async function renderPage(pageNum) {
       fabricCanvas.calcOffset();
     }
     
-    loadPageAnnotations(pageNum);
+    loadPageAnnotations(pageNum, scale);
     
     // Setup mobile text editing if needed
     // setupMobileTextEditing();
@@ -706,11 +709,14 @@ function savePageAnnotations() {
   }).filter(Boolean);
   
   pageAnnotations[currentPage] = annotations;
+  annotationScales[currentPage] = renderedScale;
 }
 
 // Load annotations for current page
-function loadPageAnnotations(pageNum) {
+function loadPageAnnotations(pageNum, scale = renderedScale) {
   resetHistory();
+  const ratio = scale / (annotationScales[pageNum] || scale);
+  renderedScale = scale;
   fabricCanvas.clear();
   
   const annotations = pageAnnotations[pageNum] || [];
@@ -718,8 +724,8 @@ function loadPageAnnotations(pageNum) {
   annotations.forEach(annotation => {
     if (annotation.type === 'text') {
       const textbox = new fabric.Textbox(annotation.text, {
-        left: annotation.left,
-        top: annotation.top,
+        left: annotation.left * ratio,
+        top: annotation.top * ratio,
         fontFamily: annotation.fontFamily,
         fontSize: annotation.fontSize,
         fill: annotation.fill,
@@ -727,8 +733,8 @@ function loadPageAnnotations(pageNum) {
         fontStyle: annotation.fontStyle,
         underline: annotation.underline,
         width: annotation.width,
-        scaleX: annotation.scaleX || 1,
-        scaleY: annotation.scaleY || 1,
+        scaleX: (annotation.scaleX || 1) * ratio,
+        scaleY: (annotation.scaleY || 1) * ratio,
         angle: annotation.angle || 0
       });
       fabricCanvas.add(textbox);
@@ -755,10 +761,10 @@ function loadPageAnnotations(pageNum) {
         }
         
         img.set({
-          left: annotation.left,
-          top: annotation.top,
-          scaleX: scaleX,
-          scaleY: scaleY,
+          left: annotation.left * ratio,
+          top: annotation.top * ratio,
+          scaleX: scaleX * ratio,
+          scaleY: scaleY * ratio,
           angle: annotation.angle || 0
         });
         fabricCanvas.add(img);
@@ -975,7 +981,6 @@ async function exportPDF(filename) {
     
     //console.log('PDF loaded in pdf-lib, pages:', pdfLibDoc.getPageCount());
     
-    const scale = 1.5;
     const pageCount = pdfLibDoc.getPageCount();
     
     // Process each page
@@ -983,6 +988,7 @@ async function exportPDF(filename) {
       const page = pdfLibDoc.getPage(pageNum - 1);
       const { width, height } = page.getSize();
       const annotations = pageAnnotations[pageNum] || [];
+      const scale = annotationScales[pageNum] || 1.5;
       
       console.log(`Processing page ${pageNum}, annotations:`, annotations.length);
       
